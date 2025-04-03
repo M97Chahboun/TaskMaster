@@ -10,6 +10,7 @@ import ProductivityChart from "@/components/dashboard/ProductivityChart";
 import AddTaskModal from "@/components/tasks/AddTaskModal";
 import { getGreeting, getFormattedDate } from "@/utils/dateUtils";
 import { useTasks } from "@/hooks/useTasks";
+import type { Task } from "@shared/schema";
 
 export default function Dashboard() {
   const [date] = useState(new Date());
@@ -20,7 +21,7 @@ export default function Dashboard() {
   
   const { tasks, isLoading, refetch } = useTasks(userId);
   
-  const { data: upcomingTasks } = useQuery({
+  const { data: upcomingTasks = [] } = useQuery<Task[]>({
     queryKey: ['/api/stats/upcoming-tasks', { userId }],
   });
   
@@ -68,7 +69,7 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold">{greeting}, Alex!</h2>
               <p className="text-gray-600 mt-1">{formattedDate}</p>
             </div>
-            <AddTaskModal onTaskAdded={handleTaskAdded} />
+            <AddTaskModal onTaskAdded={handleTaskAdded} userId={userId} />
           </div>
           
           {/* Quick Stats */}

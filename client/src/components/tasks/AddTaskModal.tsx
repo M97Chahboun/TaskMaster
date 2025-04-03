@@ -13,9 +13,10 @@ import { useState } from "react";
 interface AddTaskModalProps {
   onTaskAdded: () => void;
   trigger?: React.ReactNode;
+  userId?: number;
 }
 
-export default function AddTaskModal({ onTaskAdded, trigger }: AddTaskModalProps) {
+export default function AddTaskModal({ onTaskAdded, trigger, userId = 1 }: AddTaskModalProps) {
   const [open, setOpen] = useState(false);
 
   const handleTaskAdded = () => {
@@ -37,7 +38,7 @@ export default function AddTaskModal({ onTaskAdded, trigger }: AddTaskModalProps
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Add New Task</DialogTitle>
         </DialogHeader>
-        <TaskForm onSuccess={handleTaskAdded} />
+        <TaskForm onSuccess={handleTaskAdded} userId={userId} />
       </DialogContent>
     </Dialog>
   );

@@ -21,13 +21,14 @@ export function useTasks(userId: number) {
       return apiRequest('POST', '/api/tasks', taskData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
       toast({
         title: "Task created",
         description: "Your task has been created successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Create task error:', error);
       toast({
         title: "Error",
         description: "There was a problem creating your task.",
@@ -41,13 +42,14 @@ export function useTasks(userId: number) {
       return apiRequest('PATCH', `/api/tasks/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
       toast({
         title: "Task updated",
         description: "Your task has been updated successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Update task error:', error);
       toast({
         title: "Error",
         description: "There was a problem updating your task.",
@@ -61,13 +63,14 @@ export function useTasks(userId: number) {
       return apiRequest('DELETE', `/api/tasks/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
       toast({
         title: "Task deleted",
         description: "Your task has been deleted successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Delete task error:', error);
       toast({
         title: "Error",
         description: "There was a problem deleting your task.",

@@ -34,18 +34,19 @@ const taskFormSchema = insertTaskSchema.extend({
 });
 
 interface TaskFormProps {
-  task?: z.infer<typeof taskFormSchema>;
+  task?: z.infer<typeof taskFormSchema> & { id?: number };
   onSuccess: () => void;
+  userId?: number;
 }
 
-export default function TaskForm({ task, onSuccess }: TaskFormProps) {
+export default function TaskForm({ task, onSuccess, userId = 1 }: TaskFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<z.infer<typeof taskFormSchema>>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: task || {
-      userId: 1, // Default user ID
+      userId: userId, // Use the passed userId or default to 1
       title: "",
       description: "",
       dueDate: undefined,
@@ -59,7 +60,7 @@ export default function TaskForm({ task, onSuccess }: TaskFormProps) {
     setIsSubmitting(true);
     
     try {
-      if (task?.id) {
+      if (task && 'id' in task) {
         // Update existing task
         await apiRequest('PATCH', `/api/tasks/${task.id}`, data);
         toast({
@@ -76,8 +77,8 @@ export default function TaskForm({ task, onSuccess }: TaskFormProps) {
       }
       
       // Invalidate tasks cache
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks/category'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks/category', { userId }] });
       onSuccess();
     } catch (error) {
       toast({
@@ -214,7 +215,7 @@ export default function TaskForm({ task, onSuccess }: TaskFormProps) {
             type="submit" 
             disabled={isSubmitting}
           >
-            {task?.id ? "Update Task" : "Add Task"}
+            {task && 'id' in task ? "Update Task" : "Add Task"}
           </Button>
         </div>
       </form>
