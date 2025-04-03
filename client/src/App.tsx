@@ -7,6 +7,7 @@ import AllTasks from "./pages/AllTasks";
 import DailyPlanner from "./pages/DailyPlanner";
 import Categories from "./pages/Categories";
 import Statistics from "./pages/Statistics";
+import KanbanView from "./pages/KanbanView";
 import { ThemeProvider } from "./components/theme/theme-provider";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/tasks" component={AllTasks} />
+      <Route path="/kanban" component={KanbanView} />
       <Route path="/planner" component={DailyPlanner} />
       <Route path="/categories" component={Categories} />
       <Route path="/statistics" component={Statistics} />

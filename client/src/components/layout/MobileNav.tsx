@@ -6,7 +6,8 @@ import {
   Calendar, 
   Tag,
   PlusCircle,
-  User
+  User,
+  Trello
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,18 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
               >
                 <CheckSquare className="w-5 h-5 mr-3" />
                 All Tasks
+              </Link>
+              <Link 
+                href="/kanban"
+                className={`flex items-center p-2 rounded-md ${
+                  location === "/kanban" 
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+                onClick={onClose}
+              >
+                <Trello className="w-5 h-5 mr-3" />
+                Kanban Board
               </Link>
               <Link 
                 href="/planner"
@@ -131,18 +144,18 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
           <span className="text-xs mt-1">Add</span>
         </Link>
         <Link 
+          href="/kanban"
+          className={`flex flex-col items-center p-2 ${location === "/kanban" ? "text-primary" : "text-muted-foreground"}`}
+        >
+          <Trello className="w-5 h-5" />
+          <span className="text-xs mt-1">Kanban</span>
+        </Link>
+        <Link 
           href="/planner"
           className={`flex flex-col items-center p-2 ${location === "/planner" ? "text-primary" : "text-muted-foreground"}`}
         >
           <Calendar className="w-5 h-5" />
           <span className="text-xs mt-1">Planner</span>
-        </Link>
-        <Link 
-          href="/statistics"
-          className={`flex flex-col items-center p-2 ${location === "/statistics" ? "text-primary" : "text-muted-foreground"}`}
-        >
-          <User className="w-5 h-5" />
-          <span className="text-xs mt-1">Profile</span>
         </Link>
       </div>
     </>

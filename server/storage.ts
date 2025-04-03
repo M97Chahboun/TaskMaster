@@ -67,6 +67,7 @@ export class MemStorage implements IStorage {
         priority: 'high',
         category: 'work',
         completed: false,
+        inProgress: false,
         createdAt: new Date()
       },
       {
@@ -78,6 +79,7 @@ export class MemStorage implements IStorage {
         priority: 'medium',
         category: 'work',
         completed: false,
+        inProgress: true,
         createdAt: new Date()
       },
       {
@@ -201,7 +203,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      name: insertUser.name || null,
+      email: insertUser.email || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -227,7 +234,13 @@ export class MemStorage implements IStorage {
     const id = this.taskId++;
     const task: Task = { 
       ...insertTask, 
-      id, 
+      id,
+      description: insertTask.description || null,
+      dueDate: insertTask.dueDate || null,
+      priority: insertTask.priority || 'medium',
+      category: insertTask.category || 'work',
+      completed: insertTask.completed ?? false,
+      inProgress: insertTask.inProgress ?? false,
       createdAt: new Date() 
     };
     this.tasks.set(id, task);
@@ -270,7 +283,12 @@ export class MemStorage implements IStorage {
 
   async createTimeBlock(insertTimeBlock: InsertTimeBlock): Promise<TimeBlock> {
     const id = this.timeBlockId++;
-    const timeBlock: TimeBlock = { ...insertTimeBlock, id };
+    const timeBlock: TimeBlock = { 
+      ...insertTimeBlock, 
+      id,
+      description: insertTimeBlock.description || null,
+      taskId: insertTimeBlock.taskId || null
+    };
     this.timeBlocks.set(id, timeBlock);
     return timeBlock;
   }

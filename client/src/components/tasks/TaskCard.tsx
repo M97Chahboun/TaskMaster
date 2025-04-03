@@ -53,8 +53,8 @@ export default function TaskCard({ task, onUpdate, onClick }: TaskCardProps) {
     }
   };
   
-  const handleToggleComplete = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleToggleComplete = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     
     if (isUpdating) return;
     
@@ -82,9 +82,13 @@ export default function TaskCard({ task, onUpdate, onClick }: TaskCardProps) {
     }
   };
   
+  const handleCheckedChange = () => {
+    handleToggleComplete();
+  };
+  
   return (
     <div 
-      className={`task-card border border-gray-200 rounded-lg p-4 mb-3 cursor-pointer transform transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${priorityBorderColors[task.priority as keyof typeof priorityBorderColors]} border-l-4`}
+      className={`task-card border border-border rounded-lg p-4 mb-3 cursor-pointer transform transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${priorityBorderColors[task.priority as keyof typeof priorityBorderColors]} border-l-4 bg-card`}
       onClick={onClick}
     >
       <div className="flex justify-between items-start">
@@ -93,15 +97,15 @@ export default function TaskCard({ task, onUpdate, onClick }: TaskCardProps) {
             <Checkbox 
               className="mr-3 h-5 w-5"
               checked={task.completed}
-              onCheckedChange={handleToggleComplete}
+              onCheckedChange={handleCheckedChange}
               onClick={(e) => e.stopPropagation()}
             />
-            <h3 className={`font-medium ${task.completed ? 'line-through text-gray-500' : ''}`}>
+            <h3 className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
               {task.title}
             </h3>
           </div>
           {task.description && (
-            <p className="text-sm text-gray-600 mt-1 ml-8">
+            <p className="text-sm text-muted-foreground mt-1 ml-8">
               {task.description}
             </p>
           )}
@@ -110,7 +114,7 @@ export default function TaskCard({ task, onUpdate, onClick }: TaskCardProps) {
           <span className={`text-xs text-white px-2 py-0.5 rounded-full ${priorityBadgeColors[task.priority as keyof typeof priorityBadgeColors]}`}>
             {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
           </span>
-          <span className="text-xs text-gray-500 mt-2">{getDueDisplay()}</span>
+          <span className="text-xs text-muted-foreground mt-2">{getDueDisplay()}</span>
         </div>
       </div>
     </div>

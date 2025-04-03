@@ -67,7 +67,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">{greeting}, Alex!</h2>
-              <p className="text-gray-600 mt-1">{formattedDate}</p>
+              <p className="text-muted-foreground mt-1">{formattedDate}</p>
             </div>
             <AddTaskModal onTaskAdded={handleTaskAdded} userId={userId} />
           </div>

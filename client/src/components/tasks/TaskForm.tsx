@@ -31,6 +31,7 @@ const taskFormSchema = insertTaskSchema.extend({
   dueDate: z.string().optional().transform(val => val ? new Date(val) : undefined),
   priority: z.enum(["low", "medium", "high"]),
   category: z.enum(["work", "personal", "health", "education", "other"]),
+  inProgress: z.boolean().default(false),
 });
 
 interface TaskFormProps {
@@ -53,6 +54,7 @@ export default function TaskForm({ task, onSuccess, userId = 1 }: TaskFormProps)
       priority: "medium",
       category: "work",
       completed: false,
+      inProgress: false,
     }
   });
 

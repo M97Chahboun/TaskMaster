@@ -5,7 +5,8 @@ import {
   PanelLeft, 
   CheckSquare, 
   Calendar, 
-  Tag
+  Tag,
+  Trello
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -14,6 +15,7 @@ export default function Sidebar() {
   const navItems = [
     { href: "/", label: "Dashboard", icon: <PanelLeft className="w-5 h-5 mr-3" /> },
     { href: "/tasks", label: "All Tasks", icon: <CheckSquare className="w-5 h-5 mr-3" /> },
+    { href: "/kanban", label: "Kanban Board", icon: <Trello className="w-5 h-5 mr-3" /> },
     { href: "/planner", label: "Daily Planner", icon: <Calendar className="w-5 h-5 mr-3" /> },
     { href: "/categories", label: "Categories", icon: <Tag className="w-5 h-5 mr-3" /> },
     { href: "/statistics", label: "Statistics", icon: <ChartBar className="w-5 h-5 mr-3" /> },

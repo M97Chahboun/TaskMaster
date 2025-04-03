@@ -29,6 +29,7 @@ export const tasks = pgTable("tasks", {
   priority: priorityEnum("priority").notNull().default('medium'),
   category: categoryEnum("category").notNull().default('work'),
   completed: boolean("completed").notNull().default(false),
+  inProgress: boolean("in_progress").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
