@@ -20,8 +20,8 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="hidden md:block w-64 bg-white shadow-md z-10 flex-shrink-0">
-      <div className="p-4 border-b border-gray-200">
+    <div className="hidden md:block w-64 bg-card shadow-md z-10 flex-shrink-0">
+      <div className="p-4 border-b border-border">
         <h1 className="text-xl font-bold text-primary flex items-center">
           <CheckCircle className="w-6 h-6 mr-2" />
           TaskMaster
@@ -35,8 +35,8 @@ export default function Sidebar() {
               href={item.href}
               className={`flex items-center p-2 rounded-md ${
                 location === item.href 
-                  ? "bg-primary-light bg-opacity-10 text-primary"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted"
               }`}
             >
               {item.icon}
@@ -46,14 +46,14 @@ export default function Sidebar() {
         </nav>
       </div>
       
-      <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200">
+      <div className="absolute bottom-0 w-64 p-4 border-t border-border">
         <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-3">
+          <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center mr-3">
             AM
           </div>
           <div>
             <p className="text-sm font-medium">Alex Morgan</p>
-            <p className="text-xs text-gray-500">alex@example.com</p>
+            <p className="text-xs text-muted-foreground">alex@example.com</p>
           </div>
         </div>
       </div>

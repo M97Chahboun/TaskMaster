@@ -7,6 +7,7 @@ import AllTasks from "./pages/AllTasks";
 import DailyPlanner from "./pages/DailyPlanner";
 import Categories from "./pages/Categories";
 import Statistics from "./pages/Statistics";
+import { ThemeProvider } from "./components/theme/theme-provider";
 
 function Router() {
   return (
@@ -24,12 +25,12 @@ function Router() {
 
 function App() {
   return (
-    <>
+    <ThemeProvider defaultTheme="system" storageKey="taskmaster-theme">
       <AppLayout>
         <Router />
       </AppLayout>
       <Toaster />
-    </>
+    </ThemeProvider>
   );
 }
 

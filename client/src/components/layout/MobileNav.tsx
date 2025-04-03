@@ -30,12 +30,12 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
       >
         <div 
           className={cn(
-            "fixed top-0 left-0 h-full w-64 bg-white shadow-lg transform transition-transform",
+            "fixed top-0 left-0 h-full w-64 bg-card shadow-lg transform transition-transform",
             isOpen ? "translate-x-0" : "-translate-x-full"
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-border">
             <h1 className="text-xl font-bold text-primary flex items-center">
               TaskMaster
             </h1>
@@ -46,8 +46,8 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 href="/"
                 className={`flex items-center p-2 rounded-md ${
                   location === "/" 
-                    ? "bg-primary-light bg-opacity-10 text-primary"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
                 onClick={onClose}
               >
@@ -58,8 +58,8 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 href="/tasks"
                 className={`flex items-center p-2 rounded-md ${
                   location === "/tasks" 
-                    ? "bg-primary-light bg-opacity-10 text-primary"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
                 onClick={onClose}
               >
@@ -70,8 +70,8 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 href="/planner"
                 className={`flex items-center p-2 rounded-md ${
                   location === "/planner" 
-                    ? "bg-primary-light bg-opacity-10 text-primary"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
                 onClick={onClose}
               >
@@ -82,8 +82,8 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 href="/categories"
                 className={`flex items-center p-2 rounded-md ${
                   location === "/categories" 
-                    ? "bg-primary-light bg-opacity-10 text-primary"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
                 onClick={onClose}
               >
@@ -94,8 +94,8 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 href="/statistics"
                 className={`flex items-center p-2 rounded-md ${
                   location === "/statistics" 
-                    ? "bg-primary-light bg-opacity-10 text-primary"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
                 onClick={onClose}
               >
@@ -108,38 +108,38 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
       </div>
 
       {/* Fixed Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center py-2 z-20">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around items-center py-2 z-20">
         <Link 
           href="/"
-          className={`flex flex-col items-center p-2 ${location === "/" ? "text-primary" : "text-gray-500"}`}
+          className={`flex flex-col items-center p-2 ${location === "/" ? "text-primary" : "text-muted-foreground"}`}
         >
           <PanelLeft className="w-5 h-5" />
           <span className="text-xs mt-1">Dashboard</span>
         </Link>
         <Link 
           href="/tasks"
-          className={`flex flex-col items-center p-2 ${location === "/tasks" ? "text-primary" : "text-gray-500"}`}
+          className={`flex flex-col items-center p-2 ${location === "/tasks" ? "text-primary" : "text-muted-foreground"}`}
         >
           <CheckSquare className="w-5 h-5" />
           <span className="text-xs mt-1">Tasks</span>
         </Link>
         <Link 
           href="/tasks"
-          className="flex flex-col items-center p-2 text-gray-500"
+          className="flex flex-col items-center p-2 text-primary"
         >
-          <PlusCircle className="w-6 h-6 text-primary" />
+          <PlusCircle className="w-6 h-6" />
           <span className="text-xs mt-1">Add</span>
         </Link>
         <Link 
           href="/planner"
-          className={`flex flex-col items-center p-2 ${location === "/planner" ? "text-primary" : "text-gray-500"}`}
+          className={`flex flex-col items-center p-2 ${location === "/planner" ? "text-primary" : "text-muted-foreground"}`}
         >
           <Calendar className="w-5 h-5" />
           <span className="text-xs mt-1">Planner</span>
         </Link>
         <Link 
           href="/statistics"
-          className={`flex flex-col items-center p-2 ${location === "/statistics" ? "text-primary" : "text-gray-500"}`}
+          className={`flex flex-col items-center p-2 ${location === "/statistics" ? "text-primary" : "text-muted-foreground"}`}
         >
           <User className="w-5 h-5" />
           <span className="text-xs mt-1">Profile</span>
