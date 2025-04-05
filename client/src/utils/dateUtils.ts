@@ -1,5 +1,15 @@
-export function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+export function formatDate(date: Date | string | null): string {
+  if (!date) return 'No date';
+  
+  // Convert to Date object if it's a string
+  const dateObj = (typeof date === 'string') ? new Date(date) : date;
+  
+  // Check if dateObj is a valid date
+  if (isNaN(dateObj.getTime())) {
+    return 'Invalid date';
+  }
+  
+  return dateObj.toISOString().split('T')[0];
 }
 
 export function getGreeting(): string {
@@ -14,30 +24,34 @@ export function getGreeting(): string {
   }
 }
 
-export function getDayName(date: Date): string {
-  return date.toLocaleDateString('en-US', { weekday: 'long' });
+export function getDayName(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', { weekday: 'long' });
 }
 
-export function getMonthName(date: Date): string {
-  return date.toLocaleDateString('en-US', { month: 'long' });
+export function getMonthName(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', { month: 'long' });
 }
 
-export function getFormattedDate(date: Date): string {
-  const day = date.getDate();
-  const month = getMonthName(date);
+export function getFormattedDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const day = dateObj.getDate();
+  const month = getMonthName(dateObj);
   
-  return `${getDayName(date)}, ${month} ${day}`;
+  return `${getDayName(dateObj)}, ${month} ${day}`;
 }
 
-export function getTimeFromDate(date: Date): string {
-  return date.toLocaleTimeString('en-US', { 
+export function getTimeFromDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleTimeString('en-US', { 
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
   });
 }
 
-export function getDaysBetween(date1: Date, date2: Date): number {
+export function getDaysBetween(date1: Date | string, date2: Date | string): number {
   const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
   const firstDate = new Date(date1);
   const secondDate = new Date(date2);
@@ -49,27 +63,30 @@ export function getDaysBetween(date1: Date, date2: Date): number {
   return Math.round(Math.abs((firstDate.getTime() - secondDate.getTime()) / oneDay));
 }
 
-export function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
+export function addDays(date: Date | string, days: number): Date {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const result = new Date(dateObj);
   result.setDate(result.getDate() + days);
   return result;
 }
 
-export function isToday(date: Date): boolean {
+export function isToday(date: Date | string): boolean {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   const today = new Date();
-  return date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear();
+  return dateObj.getDate() === today.getDate() &&
+    dateObj.getMonth() === today.getMonth() &&
+    dateObj.getFullYear() === today.getFullYear();
 }
 
-export function isTomorrow(date: Date): boolean {
+export function isTomorrow(date: Date | string): boolean {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   const tomorrow = addDays(new Date(), 1);
-  return date.getDate() === tomorrow.getDate() &&
-    date.getMonth() === tomorrow.getMonth() &&
-    date.getFullYear() === tomorrow.getFullYear();
+  return dateObj.getDate() === tomorrow.getDate() &&
+    dateObj.getMonth() === tomorrow.getMonth() &&
+    dateObj.getFullYear() === tomorrow.getFullYear();
 }
 
-export function getRelativeDateString(date: Date): string {
+export function getRelativeDateString(date: Date | string): string {
   if (isToday(date)) {
     return 'Today';
   } else if (isTomorrow(date)) {
@@ -78,7 +95,9 @@ export function getRelativeDateString(date: Date): string {
     const now = new Date();
     const daysDiff = getDaysBetween(now, date);
     
-    if (date < now) {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    if (dateObj < now) {
       if (daysDiff === 1) {
         return 'Yesterday';
       } else {
@@ -88,7 +107,7 @@ export function getRelativeDateString(date: Date): string {
       if (daysDiff <= 7) {
         return `In ${daysDiff} days`;
       } else {
-        return date.toLocaleDateString('en-US', {
+        return dateObj.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric'
         });

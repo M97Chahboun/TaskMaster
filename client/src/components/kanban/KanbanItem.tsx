@@ -28,7 +28,7 @@ export default function KanbanItem({ id, task, onUpdate }: KanbanItemProps) {
     transition,
   };
 
-  const formatDueDate = (date: Date | null) => {
+  const formatDueDate = (date: Date | string | null) => {
     if (!date) return 'No due date';
     return formatDate(date);
   };
