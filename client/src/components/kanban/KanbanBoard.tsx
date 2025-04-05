@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { 
   DndContext, 
   DragOverlay,
@@ -35,11 +35,18 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+  // Force re-render with a counter
+  const [updateCounter, setUpdateCounter] = useState(0);
   
   // Update local tasks when props change
   useEffect(() => {
     setLocalTasks(tasks);
   }, [tasks]);
+  
+  // Force re-render when localTasks change
+  const forceUpdate = () => {
+    setUpdateCounter(prev => prev + 1);
+  };
   
   // Configure the sensors
   const sensors = useSensors(
@@ -53,24 +60,27 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
     })
   );
 
-  // Setup the columns using localTasks instead of tasks directly
-  const columns: KanbanColumn[] = [
-    {
-      id: 'to-do',
-      title: 'To Do',
-      tasks: localTasks.filter(task => !task.completed && !task.inProgress)
-    },
-    {
-      id: 'in-progress',
-      title: 'In Progress',
-      tasks: localTasks.filter(task => !task.completed && task.inProgress)
-    },
-    {
-      id: 'completed',
-      title: 'Completed',
-      tasks: localTasks.filter(task => task.completed)
-    }
-  ];
+  // Calculate columns using useMemo for better performance and re-rendering
+  const columns = React.useMemo(() => {
+    // This will recalculate when localTasks or updateCounter changes
+    return [
+      {
+        id: 'to-do',
+        title: 'To Do',
+        tasks: localTasks.filter(task => !task.completed && !task.inProgress)
+      },
+      {
+        id: 'in-progress',
+        title: 'In Progress',
+        tasks: localTasks.filter(task => !task.completed && task.inProgress)
+      },
+      {
+        id: 'completed',
+        title: 'Completed',
+        tasks: localTasks.filter(task => task.completed)
+      }
+    ];
+  }, [localTasks, updateCounter]); // Depend on both localTasks and updateCounter
 
   // Get the task from the active ID
   const getTaskFromId = useCallback((id: string) => {
@@ -104,13 +114,16 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
     }
     
     const taskId = parseInt(active.id.replace('task-', ''));
-    const task = localTasks.find(t => t.id === taskId);
+    const taskIndex = localTasks.findIndex(t => t.id === taskId);
     
-    if (!task) {
+    if (taskIndex === -1) {
       setActiveId(null);
       setActiveTask(null);
       return;
     }
+    
+    // Get a reference to the original task
+    const task = {...localTasks[taskIndex]};
     
     // Determine the new state based on which column the task was dropped in
     let updates: Partial<Task> = {};
@@ -123,23 +136,23 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
       updates = { completed: true, inProgress: false };
     }
     
-    // Optimistically update the local state first
-    setLocalTasks(prevTasks => 
-      prevTasks.map(t => 
-        t.id === taskId 
-          ? { ...t, ...updates } 
-          : t
-      )
-    );
+    // Create a new task object with updates
+    const updatedTask = { ...task, ...updates };
+    
+    // Create a new array with the updated task
+    const newTasks = [...localTasks];
+    newTasks[taskIndex] = updatedTask;
+    
+    // Update the local state immediately for responsive UI
+    setLocalTasks(newTasks);
+    forceUpdate();
     
     try {
       // Update the task in the database
-      await apiRequest('PATCH', `/api/tasks/${taskId}`, updates);
+      const updatedData = await apiRequest('PATCH', `/api/tasks/${taskId}`, updates);
       
-      // Invalidate the tasks query to refresh the data
+      // If the update was successful, trigger refetch and notify parent
       queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
-      
-      // Notify the parent component that tasks have changed
       onTasksChange();
       
       toast({
@@ -147,12 +160,13 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
         description: `Task moved to ${over.id}`,
       });
     } catch (error) {
-      // Revert the optimistic update if there was an error
+      // If there was an error, revert to the original task array
       setLocalTasks(tasks);
+      forceUpdate();
       
       toast({
         title: 'Error',
-        description: 'Failed to update task',
+        description: 'Failed to update task status',
         variant: 'destructive',
       });
     }
