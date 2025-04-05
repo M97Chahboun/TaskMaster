@@ -16,7 +16,7 @@ export default function DailyPlanner({ userId, date = new Date() }: DailyPlanner
   
   const formattedDate = formatDate(selectedDate);
   
-  const { data: timeBlocks, isLoading } = useQuery({
+  const { data: timeBlocks = [], isLoading } = useQuery<TimeBlock[]>({
     queryKey: ['/api/timeblocks', { userId, date: formattedDate }],
   });
   
@@ -48,15 +48,15 @@ export default function DailyPlanner({ userId, date = new Date() }: DailyPlanner
     return 'border-blue-500';
   };
   
-  // Function to get background color based on border color
+  // Function to get background color based on border color with dark mode support
   const getBackgroundColor = (borderColor: string) => {
-    if (borderColor === 'border-gray-300') return '';
-    if (borderColor === 'border-primary') return 'bg-primary-light bg-opacity-5';
-    if (borderColor === 'border-green-500') return 'bg-green-50';
-    if (borderColor === 'border-yellow-500') return 'bg-yellow-50';
-    if (borderColor === 'border-red-500') return 'bg-red-50';
-    if (borderColor === 'border-blue-500') return 'bg-blue-50';
-    return '';
+    if (borderColor === 'border-gray-300') return 'dark:bg-gray-800';
+    if (borderColor === 'border-primary') return 'bg-primary/5 dark:bg-primary/10';
+    if (borderColor === 'border-green-500') return 'bg-green-50 dark:bg-green-900/20';
+    if (borderColor === 'border-yellow-500') return 'bg-yellow-50 dark:bg-yellow-900/20';
+    if (borderColor === 'border-red-500') return 'bg-red-50 dark:bg-red-900/20';
+    if (borderColor === 'border-blue-500') return 'bg-blue-50 dark:bg-blue-900/20';
+    return 'dark:bg-gray-800';
   };
   
   const formatTime = (time: string) => {
@@ -100,28 +100,28 @@ export default function DailyPlanner({ userId, date = new Date() }: DailyPlanner
                 bgColor
               )}
             >
-              <div className="w-16 flex-shrink-0 text-gray-500 text-sm">
+              <div className="w-16 flex-shrink-0 text-gray-500 dark:text-gray-400 text-sm">
                 {formatTime(block.startTime)}
               </div>
               <div className="flex-1">
                 <div className="flex justify-between">
-                  <h3 className="font-medium">{block.title}</h3>
-                  <span className="text-sm text-gray-500">{formatDuration(block.duration)}</span>
+                  <h3 className="font-medium dark:text-gray-200">{block.title}</h3>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{formatDuration(block.duration)}</span>
                 </div>
                 {block.description && (
-                  <p className="text-sm text-gray-600 mt-1">{block.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{block.description}</p>
                 )}
               </div>
             </div>
           );
         })
       ) : (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No time blocks scheduled for today
         </div>
       )}
       
-      <div className="flex items-center justify-center border-dashed border-2 border-gray-200 rounded-md p-4 text-gray-400 cursor-pointer hover:border-primary hover:text-primary">
+      <div className="flex items-center justify-center border-dashed border-2 border-gray-200 dark:border-gray-700 rounded-md p-4 text-gray-400 dark:text-gray-500 cursor-pointer hover:border-primary hover:text-primary dark:hover:text-primary">
         <PlusCircle className="mr-2 h-5 w-5" />
         Add Time Block
       </div>

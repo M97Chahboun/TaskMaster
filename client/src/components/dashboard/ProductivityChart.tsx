@@ -16,11 +16,19 @@ interface WeeklyData {
 export default function ProductivityChart({ userId }: ProductivityChartProps) {
   const [timeRange, setTimeRange] = useState<'week' | 'lastWeek' | 'month'>('week');
   
-  const { data: completionRate } = useQuery({
+  interface CompletionRateResponse {
+    rate: number;
+  }
+  
+  interface CompletedTasksResponse {
+    count: number;
+  }
+  
+  const { data: completionRate = { rate: 0 } } = useQuery<CompletionRateResponse>({
     queryKey: ['/api/stats/completion-rate', { userId }],
   });
   
-  const { data: completedTasks } = useQuery({
+  const { data: completedTasks = { count: 0 } } = useQuery<CompletedTasksResponse>({
     queryKey: ['/api/stats/completed-tasks', { userId }],
   });
   
@@ -106,10 +114,10 @@ export default function ProductivityChart({ userId }: ProductivityChartProps) {
           {weeklyData.map((day, index) => (
             <div key={index} className="flex flex-col items-center flex-1">
               <div 
-                className={`bg-primary-light hover:bg-primary w-full rounded-t-md transition-all duration-200`} 
+                className={`bg-primary/20 hover:bg-primary w-full rounded-t-md transition-all duration-200`} 
                 style={{ height: `${day.count}%` }}
               ></div>
-              <p className="text-xs mt-2 text-gray-600">{day.day}</p>
+              <p className="text-xs mt-2 text-gray-600 dark:text-gray-400">{day.day}</p>
             </div>
           ))}
         </div>
@@ -117,19 +125,19 @@ export default function ProductivityChart({ userId }: ProductivityChartProps) {
       
       <div className="grid grid-cols-3 gap-4 mt-6">
         <div className="text-center">
-          <p className="text-sm text-gray-500">Tasks Completed</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Tasks Completed</p>
           <p className="text-2xl font-bold text-primary">
-            {completedTasks?.count || 24}
+            {completedTasks.count}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-sm text-gray-500">Completion Rate</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Completion Rate</p>
           <p className="text-2xl font-bold text-primary">
-            {completionRate ? `${Math.round(completionRate.rate)}%` : '75%'}
+            {`${Math.round(completionRate.rate)}%`}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-sm text-gray-500">Most Productive Day</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Most Productive Day</p>
           <p className="text-2xl font-bold text-primary">{getMostProductiveDay()}</p>
         </div>
       </div>
