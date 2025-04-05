@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   DndContext, 
   DragOverlay,
@@ -34,6 +34,12 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
   const { toast } = useToast();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+  
+  // Update local tasks when props change
+  useEffect(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
   
   // Configure the sensors
   const sensors = useSensors(
@@ -47,30 +53,30 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
     })
   );
 
-  // Setup the columns
+  // Setup the columns using localTasks instead of tasks directly
   const columns: KanbanColumn[] = [
     {
       id: 'to-do',
       title: 'To Do',
-      tasks: tasks.filter(task => !task.completed && !task.inProgress)
+      tasks: localTasks.filter(task => !task.completed && !task.inProgress)
     },
     {
       id: 'in-progress',
       title: 'In Progress',
-      tasks: tasks.filter(task => !task.completed && task.inProgress)
+      tasks: localTasks.filter(task => !task.completed && task.inProgress)
     },
     {
       id: 'completed',
       title: 'Completed',
-      tasks: tasks.filter(task => task.completed)
+      tasks: localTasks.filter(task => task.completed)
     }
   ];
 
   // Get the task from the active ID
   const getTaskFromId = useCallback((id: string) => {
     const taskId = parseInt(id.replace('task-', ''));
-    return tasks.find(task => task.id === taskId) || null;
-  }, [tasks]);
+    return localTasks.find(task => task.id === taskId) || null;
+  }, [localTasks]);
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
@@ -98,7 +104,7 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
     }
     
     const taskId = parseInt(active.id.replace('task-', ''));
-    const task = tasks.find(t => t.id === taskId);
+    const task = localTasks.find(t => t.id === taskId);
     
     if (!task) {
       setActiveId(null);
@@ -117,6 +123,15 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
       updates = { completed: true, inProgress: false };
     }
     
+    // Optimistically update the local state first
+    setLocalTasks(prevTasks => 
+      prevTasks.map(t => 
+        t.id === taskId 
+          ? { ...t, ...updates } 
+          : t
+      )
+    );
+    
     try {
       // Update the task in the database
       await apiRequest('PATCH', `/api/tasks/${taskId}`, updates);
@@ -132,6 +147,9 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
         description: `Task moved to ${over.id}`,
       });
     } catch (error) {
+      // Revert the optimistic update if there was an error
+      setLocalTasks(tasks);
+      
       toast({
         title: 'Error',
         description: 'Failed to update task',
