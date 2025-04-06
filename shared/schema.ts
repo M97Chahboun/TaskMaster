@@ -49,8 +49,14 @@ export const timeBlocks = pgTable("time_blocks", {
   description: text("description"),
 });
 
-export const insertTimeBlockSchema = createInsertSchema(timeBlocks).omit({
+// Create initial schema
+const baseTimeBlockSchema = createInsertSchema(timeBlocks).omit({
   id: true,
+});
+
+// Modify it to handle string dates
+export const insertTimeBlockSchema = baseTimeBlockSchema.extend({
+  date: z.union([z.string(), z.date()]),
 });
 
 export type User = typeof users.$inferSelect;

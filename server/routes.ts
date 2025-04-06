@@ -164,8 +164,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/timeblocks", async (req, res) => {
     try {
       console.log("Received timeblock data:", JSON.stringify(req.body));
+      
+      // Validate the data with our schema that accepts both string and Date
       const timeBlockData = insertTimeBlockSchema.parse(req.body);
-      console.log("Parsed timeblock data:", JSON.stringify(timeBlockData));
+      
+      // Ensure date is converted to a Date object
+      if (typeof timeBlockData.date === 'string') {
+        timeBlockData.date = new Date(timeBlockData.date);
+      }
+      
+      console.log("Parsed timeblock data:", JSON.stringify(timeBlockData, (key, value) => {
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        return value;
+      }));
+      
       const timeBlock = await storage.createTimeBlock(timeBlockData);
       res.status(201).json(timeBlock);
     } catch (error) {
@@ -185,7 +199,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const timeBlock = await storage.updateTimeBlock(timeBlockId, req.body);
+      console.log("Received timeblock update data:", JSON.stringify(req.body));
+      
+      // Handle date conversion if it's present
+      const updateData = { ...req.body };
+      if (typeof updateData.date === 'string') {
+        updateData.date = new Date(updateData.date);
+      }
+      
+      console.log("Processed update data:", JSON.stringify(updateData, (key, value) => {
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        return value;
+      }));
+      
+      const timeBlock = await storage.updateTimeBlock(timeBlockId, updateData);
       
       if (!timeBlock) {
         return res.status(404).json({ message: "TimeBlock not found" });
@@ -193,6 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(timeBlock);
     } catch (error) {
+      console.error("Error updating timeblock:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid timeBlock data", errors: error.errors });
       }
