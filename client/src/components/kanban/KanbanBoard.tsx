@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   DndContext, 
   DragOverlay,
@@ -30,29 +30,32 @@ type KanbanColumn = {
   tasks: Task[];
 }
 
+// Find the column that contains the task
+function findColumnOfTask(columns: KanbanColumn[], taskId: string): string | null {
+  for (const column of columns) {
+    const found = column.tasks.some(task => `task-${task.id}` === taskId);
+    if (found) return column.id;
+  }
+  return null;
+}
+
 export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoardProps) {
   const { toast } = useToast();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
-  // Force re-render with a counter
-  const [updateCounter, setUpdateCounter] = useState(0);
   
   // Update local tasks when props change
   useEffect(() => {
     setLocalTasks(tasks);
   }, [tasks]);
   
-  // Force re-render when localTasks change
-  const forceUpdate = () => {
-    setUpdateCounter(prev => prev + 1);
-  };
-  
-  // Configure the sensors
+  // Configure the sensors with looser constraints
   const sensors = useSensors(
     useSensor(PointerSensor, {
+      // Activate on a shorter distance to make dragging more responsive
       activationConstraint: {
-        distance: 5,
+        distance: 3,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -60,27 +63,24 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
     })
   );
 
-  // Calculate columns using useMemo for better performance and re-rendering
-  const columns = React.useMemo(() => {
-    // This will recalculate when localTasks or updateCounter changes
-    return [
-      {
-        id: 'to-do',
-        title: 'To Do',
-        tasks: localTasks.filter(task => !task.completed && !task.inProgress)
-      },
-      {
-        id: 'in-progress',
-        title: 'In Progress',
-        tasks: localTasks.filter(task => !task.completed && task.inProgress)
-      },
-      {
-        id: 'completed',
-        title: 'Completed',
-        tasks: localTasks.filter(task => task.completed)
-      }
-    ];
-  }, [localTasks, updateCounter]); // Depend on both localTasks and updateCounter
+  // Calculate columns - define outside so it's accessible to all handlers
+  const columns = [
+    {
+      id: 'to-do',
+      title: 'To Do',
+      tasks: localTasks.filter(task => !task.completed && !task.inProgress)
+    },
+    {
+      id: 'in-progress',
+      title: 'In Progress',
+      tasks: localTasks.filter(task => !task.completed && task.inProgress)
+    },
+    {
+      id: 'completed',
+      title: 'Completed',
+      tasks: localTasks.filter(task => task.completed)
+    }
+  ];
 
   // Get the task from the active ID
   const getTaskFromId = useCallback((id: string) => {
@@ -88,9 +88,10 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
     return localTasks.find(task => task.id === taskId) || null;
   }, [localTasks]);
 
-  // Handle drag start
+  // Handle drag start - setup the active task
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
+    console.log("Drag started:", active.id);
     
     if (!active || !active.id || typeof active.id !== 'string') return;
     
@@ -100,12 +101,23 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
     const task = getTaskFromId(taskId);
     if (task) {
       setActiveTask(task);
+      console.log("Active task set:", task.title);
     }
   };
 
-  // Handle drag end
+  // Additional handler for drag over to provide visual feedback
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    
+    if (!active || !over) return;
+    
+    console.log(`Dragging over: ${over.id}`);
+  };
+
+  // Handle drag end - update the task status based on the column it was dropped in
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    console.log("Drag ended - Active:", active?.id, "Over:", over?.id);
     
     if (!active || !over || !active.id || typeof active.id !== 'string' || typeof over.id !== 'string') {
       setActiveId(null);
@@ -122,53 +134,58 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
       return;
     }
     
-    // Get a reference to the original task
+    // Get the current task
     const task = {...localTasks[taskIndex]};
+    const sourceColumn = findColumnOfTask(columns, active.id);
+    const targetColumn = over.id;
     
-    // Determine the new state based on which column the task was dropped in
-    let updates: Partial<Task> = {};
+    console.log(`Moving from ${sourceColumn} to ${targetColumn}`);
     
-    if (over.id === 'to-do') {
-      updates = { completed: false, inProgress: false };
-    } else if (over.id === 'in-progress') {
-      updates = { completed: false, inProgress: true };
-    } else if (over.id === 'completed') {
-      updates = { completed: true, inProgress: false };
-    }
-    
-    // Create a new task object with updates
-    const updatedTask = { ...task, ...updates };
-    
-    // Create a new array with the updated task
-    const newTasks = [...localTasks];
-    newTasks[taskIndex] = updatedTask;
-    
-    // Update the local state immediately for responsive UI
-    setLocalTasks(newTasks);
-    forceUpdate();
-    
-    try {
-      // Update the task in the database
-      const updatedData = await apiRequest('PATCH', `/api/tasks/${taskId}`, updates);
+    // Only proceed if actually changing columns
+    if (sourceColumn !== targetColumn) {
+      // Determine the new state based on which column the task was dropped in
+      let updates: Partial<Task> = {};
       
-      // If the update was successful, trigger refetch and notify parent
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
-      onTasksChange();
+      if (targetColumn === 'to-do') {
+        updates = { completed: false, inProgress: false };
+      } else if (targetColumn === 'in-progress') {
+        updates = { completed: false, inProgress: true };
+      } else if (targetColumn === 'completed') {
+        updates = { completed: true, inProgress: false };
+      }
       
-      toast({
-        title: 'Task updated',
-        description: `Task moved to ${over.id}`,
-      });
-    } catch (error) {
-      // If there was an error, revert to the original task array
-      setLocalTasks(tasks);
-      forceUpdate();
+      // Apply updates locally
+      const updatedTask = { ...task, ...updates };
+      const newTasks = [...localTasks];
+      newTasks[taskIndex] = updatedTask;
       
-      toast({
-        title: 'Error',
-        description: 'Failed to update task status',
-        variant: 'destructive',
-      });
+      // Update local state first for better UX
+      setLocalTasks(newTasks);
+      
+      try {
+        // Update the task in the database
+        console.log(`Updating task ${taskId} with:`, updates);
+        await apiRequest('PATCH', `/api/tasks/${taskId}`, updates);
+        
+        // Refresh data
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+        onTasksChange();
+        
+        toast({
+          title: 'Task updated',
+          description: `Task moved to ${targetColumn.replace('-', ' ')}`,
+        });
+      } catch (error) {
+        console.error("Error updating task:", error);
+        // Revert on error
+        setLocalTasks(tasks);
+        
+        toast({
+          title: 'Error',
+          description: 'Failed to update task status',
+          variant: 'destructive',
+        });
+      }
     }
     
     // Clear the active task/id
@@ -182,6 +199,7 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full pb-4">
@@ -196,7 +214,7 @@ export default function KanbanBoard({ tasks, onTasksChange, userId }: KanbanBoar
         ))}
       </div>
       
-      {/* Drag overlay */}
+      {/* Drag overlay - what appears when dragging */}
       <DragOverlay>
         {activeId && activeTask && (
           <KanbanItem

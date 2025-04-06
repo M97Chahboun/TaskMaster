@@ -13,14 +13,30 @@ interface KanbanColumnProps {
 }
 
 export default function KanbanColumn({ id, title, tasks, onTaskUpdate }: KanbanColumnProps) {
-  // Setup the droppable container
-  const { setNodeRef } = useDroppable({ id });
+  // Setup the droppable container with improved data
+  const { setNodeRef, isOver, active } = useDroppable({
+    id,
+    data: {
+      accepts: ['task'], // Define what type of items this column accepts
+      type: 'column'
+    }
+  });
   
   // Get task IDs for the sortable context
   const taskIds = tasks.map(task => `task-${task.id}`);
   
+  // Apply different styles when being dragged over
+  const columnStyle = isOver ? {
+    backgroundColor: 'rgba(var(--color-primary) / 0.1)',
+    borderColor: 'rgb(var(--color-primary))',
+    transition: 'all 0.2s ease',
+  } : {};
+  
   return (
-    <Card className="flex flex-col h-full dark:bg-gray-900 dark:border-gray-800">
+    <Card 
+      className="flex flex-col h-full dark:bg-gray-900 dark:border-gray-800 transition-colors duration-200"
+      style={columnStyle}
+    >
       <CardHeader className="p-3 pb-2 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</h3>
@@ -29,9 +45,11 @@ export default function KanbanColumn({ id, title, tasks, onTaskUpdate }: KanbanC
           </div>
         </div>
       </CardHeader>
+      
+      {/* The entire card content is the drop target */}
       <CardContent 
         ref={setNodeRef} 
-        className="flex-1 p-2 overflow-y-auto max-h-[calc(100vh-250px)] bg-gray-50/50 dark:bg-gray-900"
+        className="flex-1 p-2 overflow-y-auto max-h-[calc(100vh-250px)] bg-gray-50/50 dark:bg-gray-900 min-h-[150px]"
       >
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
@@ -42,9 +60,13 @@ export default function KanbanColumn({ id, title, tasks, onTaskUpdate }: KanbanC
               onUpdate={onTaskUpdate} 
             />
           ))}
+          
+          {/* Empty state with visual cue */}
           {tasks.length === 0 && (
-            <div className="text-center p-4 text-sm text-gray-500 dark:text-gray-400">
-              No tasks in this column
+            <div className={`text-center p-4 text-sm text-gray-500 dark:text-gray-400 rounded-md border border-dashed ${
+              isOver ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700'
+            }`}>
+              {isOver ? 'Drop here' : 'No tasks in this column'}
             </div>
           )}
         </SortableContext>

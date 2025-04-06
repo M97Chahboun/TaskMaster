@@ -4,7 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Task } from "@shared/schema";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, GripVertical } from "lucide-react";
 import { formatDate } from "@/utils/dateUtils";
 import { getPriorityColor } from "@/utils/taskUtils";
 
@@ -21,11 +21,21 @@ export default function KanbanItem({ id, task, onUpdate }: KanbanItemProps) {
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id });
+    isDragging,
+  } = useSortable({ 
+    id,
+    data: {
+      type: 'task',
+      task
+    }
+  });
 
+  // Generate styles for the draggable item
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 1,
   };
 
   const formatDueDate = (date: Date | string | null) => {
@@ -38,21 +48,30 @@ export default function KanbanItem({ id, task, onUpdate }: KanbanItemProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className="mb-2 cursor-grab active:cursor-grabbing"
+      className={`mb-2 ${isDragging ? 'z-50' : ''}`}
     >
-      <Card className="border shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-        <CardHeader className="p-3 pb-1">
+      <Card className={`border shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700 relative ${
+        isDragging ? 'shadow-lg border-primary' : ''
+      }`}>
+        {/* Drag handle for better UX */}
+        <div 
+          {...listeners} 
+          className="absolute top-0 left-0 bottom-0 w-8 flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 dark:hover:bg-gray-700 rounded-l"
+        >
+          <GripVertical className="h-4 w-4 text-gray-400" />
+        </div>
+        
+        <CardHeader className="p-3 pb-1 pl-8">
           <div className="text-sm font-medium">{task.title}</div>
         </CardHeader>
-        <CardContent className="p-3 pt-0 pb-1">
+        <CardContent className="p-3 pt-0 pb-1 pl-8">
           {task.description && (
             <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
               {task.description}
             </p>
           )}
         </CardContent>
-        <CardFooter className="p-3 pt-0 flex items-center justify-between flex-wrap gap-2">
+        <CardFooter className="p-3 pt-0 pl-8 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3 text-gray-500 dark:text-gray-400" />
             <span className="text-xs text-gray-500 dark:text-gray-400">
