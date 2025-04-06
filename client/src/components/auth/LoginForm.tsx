@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,9 +24,21 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
-  const { loginMutation } = useAuth();
+  const { loginMutation, user } = useAuth();
   const isPending = loginMutation.isPending;
   const [, setLocation] = useLocation();
+  
+  // Add useEffect to handle navigation after successful login
+  useEffect(() => {
+    if (user) {
+      // If user is logged in, navigate to home after a short delay
+      const timer = setTimeout(() => {
+        setLocation("/");
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, setLocation]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -37,12 +49,7 @@ export default function LoginForm() {
   });
 
   const onSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data, {
-      onSuccess: () => {
-        // Navigate to home page after successful login
-        setLocation("/");
-      }
-    });
+    loginMutation.mutate(data);
   };
 
   return (

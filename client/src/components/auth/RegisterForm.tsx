@@ -26,9 +26,21 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterForm() {
-  const { registerMutation } = useAuth();
+  const { registerMutation, user } = useAuth();
   const isPending = registerMutation.isPending;
   const [, setLocation] = useLocation();
+  
+  // Add useEffect to handle navigation after successful registration
+  useEffect(() => {
+    if (user) {
+      // If user is logged in, navigate to home after a short delay
+      const timer = setTimeout(() => {
+        setLocation("/");
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, setLocation]);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -41,12 +53,7 @@ export default function RegisterForm() {
   });
 
   const onSubmit = (data: RegisterFormValues) => {
-    registerMutation.mutate(data, {
-      onSuccess: () => {
-        // Navigate to home page after successful registration
-        setLocation("/");
-      }
-    });
+    registerMutation.mutate(data);
   };
 
   return (
