@@ -89,6 +89,9 @@ export default function TimeBlockForm({
         date: new Date(values.date)
       };
       
+      // Log the payload to help with debugging
+      console.log("Sending payload:", payload);
+      
       if (timeBlock?.id) {
         return apiRequest(
           "PATCH",

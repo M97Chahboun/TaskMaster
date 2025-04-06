@@ -315,23 +315,66 @@ export class MemStorage implements IStorage {
   }
 
   async createTimeBlock(insertTimeBlock: InsertTimeBlock): Promise<TimeBlock> {
+    console.log("Creating timeBlock with data:", JSON.stringify(insertTimeBlock, (key, value) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      return value;
+    }));
+    
     const id = this.timeBlockId++;
+    
+    // Ensure date is properly handled
+    let date = insertTimeBlock.date;
+    if (!(date instanceof Date) && typeof date === 'string') {
+      date = new Date(date);
+    }
+    
     const timeBlock: TimeBlock = { 
       ...insertTimeBlock, 
       id,
+      date,
       description: insertTimeBlock.description || null,
       taskId: insertTimeBlock.taskId || null
     };
+    
     this.timeBlocks.set(id, timeBlock);
+    console.log("Created timeBlock:", JSON.stringify(timeBlock, (key, value) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      return value;
+    }));
+    
     return timeBlock;
   }
 
   async updateTimeBlock(id: number, updateData: Partial<TimeBlock>): Promise<TimeBlock | undefined> {
+    console.log("Updating timeBlock with data:", JSON.stringify(updateData, (key, value) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      return value;
+    }));
+    
     const timeBlock = this.timeBlocks.get(id);
     if (!timeBlock) return undefined;
 
+    // Handle date conversion if it's a string
+    if (updateData.date !== undefined && typeof updateData.date === 'string') {
+      updateData.date = new Date(updateData.date);
+    }
+    
     const updatedTimeBlock = { ...timeBlock, ...updateData };
     this.timeBlocks.set(id, updatedTimeBlock);
+    
+    console.log("Updated timeBlock:", JSON.stringify(updatedTimeBlock, (key, value) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      return value;
+    }));
+    
     return updatedTimeBlock;
   }
 
