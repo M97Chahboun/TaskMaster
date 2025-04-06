@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TimeBlock } from "@shared/schema";
 import { formatDate } from "@/utils/dateUtils";
+import TimeBlockForm from "@/components/tasks/TimeBlockForm";
+import { format, addDays, subDays } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface DailyPlannerProps {
   userId: number;
@@ -13,12 +17,42 @@ interface DailyPlannerProps {
 
 export default function DailyPlanner({ userId, date = new Date() }: DailyPlannerProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(date);
+  const [isTimeBlockFormOpen, setIsTimeBlockFormOpen] = useState(false);
+  const [editingTimeBlock, setEditingTimeBlock] = useState<TimeBlock | undefined>(undefined);
+  const queryClient = useQueryClient();
   
   const formattedDate = formatDate(selectedDate);
   
   const { data: timeBlocks = [], isLoading } = useQuery<TimeBlock[]>({
     queryKey: ['/api/timeblocks', { userId, date: formattedDate }],
   });
+  
+  const handlePreviousDay = () => {
+    setSelectedDate(prev => subDays(prev, 1));
+  };
+  
+  const handleNextDay = () => {
+    setSelectedDate(prev => addDays(prev, 1));
+  };
+  
+  const handleAddTimeBlock = () => {
+    setEditingTimeBlock(undefined);
+    setIsTimeBlockFormOpen(true);
+  };
+  
+  const handleEditTimeBlock = (timeBlock: TimeBlock) => {
+    setEditingTimeBlock(timeBlock);
+    setIsTimeBlockFormOpen(true);
+  };
+  
+  const handleTimeBlockFormSuccess = () => {
+    setIsTimeBlockFormOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['/api/timeblocks'] });
+  };
+  
+  const handleTimeBlockFormCancel = () => {
+    setIsTimeBlockFormOpen(false);
+  };
   
   // Function to get the border color based on the time block
   const getTimeBlockColor = (timeBlock: TimeBlock) => {
@@ -86,6 +120,44 @@ export default function DailyPlanner({ userId, date = new Date() }: DailyPlanner
   
   return (
     <div className="space-y-4">
+      {/* Date navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handlePreviousDay}
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Previous
+        </Button>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="min-w-[150px]">
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              {format(selectedDate, "MMM d, yyyy")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => date && setSelectedDate(date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleNextDay}
+        >
+          Next
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+      
       {timeBlocks && timeBlocks.length > 0 ? (
         timeBlocks.map((block: TimeBlock) => {
           const borderColor = getTimeBlockColor(block);
@@ -95,10 +167,11 @@ export default function DailyPlanner({ userId, date = new Date() }: DailyPlanner
             <div 
               key={block.id} 
               className={cn(
-                "flex items-start border-l-4 pl-4 py-2", 
+                "flex items-start border-l-4 pl-4 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/90 transition-colors", 
                 borderColor,
                 bgColor
               )}
+              onClick={() => handleEditTimeBlock(block)}
             >
               <div className="w-16 flex-shrink-0 text-gray-500 dark:text-gray-400 text-sm">
                 {formatTime(block.startTime)}
@@ -117,14 +190,27 @@ export default function DailyPlanner({ userId, date = new Date() }: DailyPlanner
         })
       ) : (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          No time blocks scheduled for today
+          No time blocks scheduled for this day
         </div>
       )}
       
-      <div className="flex items-center justify-center border-dashed border-2 border-gray-200 dark:border-gray-700 rounded-md p-4 text-gray-400 dark:text-gray-500 cursor-pointer hover:border-primary hover:text-primary dark:hover:text-primary">
+      <div 
+        className="flex items-center justify-center border-dashed border-2 border-gray-200 dark:border-gray-700 rounded-md p-4 text-gray-400 dark:text-gray-500 cursor-pointer hover:border-primary hover:text-primary dark:hover:text-primary"
+        onClick={handleAddTimeBlock}
+      >
         <PlusCircle className="mr-2 h-5 w-5" />
         Add Time Block
       </div>
+      
+      {/* Time Block Form */}
+      <TimeBlockForm 
+        open={isTimeBlockFormOpen}
+        onSuccess={handleTimeBlockFormSuccess}
+        onCancel={handleTimeBlockFormCancel}
+        timeBlock={editingTimeBlock}
+        userId={userId}
+        selectedDate={selectedDate}
+      />
     </div>
   );
 }
