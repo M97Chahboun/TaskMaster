@@ -17,12 +17,12 @@ export default function Statistics() {
   const { tasks, isLoading } = useTasks(userId);
   
   // Fetch completion rate data
-  const { data: completionRate } = useQuery({
+  const { data: completionRate } = useQuery<{ rate: number }>({
     queryKey: ['/api/stats/completion-rate', { userId }],
   });
   
   // Fetch completed tasks count
-  const { data: completedTasksData } = useQuery({
+  const { data: completedTasksData } = useQuery<{ count: number }>({
     queryKey: ['/api/stats/completed-tasks', { userId }],
   });
   
@@ -168,6 +168,7 @@ export default function Statistics() {
       case 'personal': return 'bg-secondary';
       case 'health': return 'bg-green-500';
       case 'education': return 'bg-blue-500';
+      case 'other': return 'bg-gray-500';
       default: return 'bg-gray-500';
     }
   }
@@ -362,7 +363,7 @@ export default function Statistics() {
                     </div>
                     <Progress 
                       value={totalCategoryTasks > 0 ? (item.count / totalCategoryTasks) * 100 : 0} 
-                      className={`h-2 ${item.color}`}
+                      className={`h-2 !${item.color}`}
                     />
                   </div>
                 ))}
