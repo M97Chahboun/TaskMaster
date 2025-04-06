@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
 // Create a form schema from the insert time block schema with validation
 const timeBlockFormSchema = insertTimeBlockSchema.extend({
@@ -60,9 +60,9 @@ export default function TimeBlockForm({
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Fetch tasks for task selector
+  // Fetch backlog tasks for task selector
   const { data: tasks, isLoading: isLoadingTasks } = useQuery<Task[]>({
-    queryKey: ['/api/tasks'],
+    queryKey: ['/api/tasks/backlog'],
     enabled: open, // Only fetch when the modal is open
   });
 
@@ -83,17 +83,23 @@ export default function TimeBlockForm({
   // Mutation for creating or updating a time block
   const mutation = useMutation({
     mutationFn: async (values: TimeBlockFormValues) => {
+      // Convert string date to Date object before sending to server
+      const payload = {
+        ...values,
+        date: new Date(values.date)
+      };
+      
       if (timeBlock?.id) {
         return apiRequest(
           "PATCH",
           `/api/timeblocks/${timeBlock.id}`,
-          values
+          payload
         );
       } else {
         return apiRequest(
           "POST",
           "/api/timeblocks",
-          values
+          payload
         );
       }
     },
@@ -128,6 +134,11 @@ export default function TimeBlockForm({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{timeBlock?.id ? "Edit Time Block" : "Add Time Block"}</DialogTitle>
+          <DialogDescription>
+            {timeBlock?.id 
+              ? "Update the details of this time block in your schedule." 
+              : "Add a new time block to your schedule for the selected date."}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
