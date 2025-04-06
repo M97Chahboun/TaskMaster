@@ -142,15 +142,19 @@ export default function TaskForm({ task, onSuccess, userId = 1 }: TaskFormProps)
             name="dueDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Due Date</FormLabel>
+                <FormLabel>Due Date (optional)</FormLabel>
                 <FormControl>
                   <Input 
                     type="date" 
                     {...field} 
                     value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                    onChange={(e) => field.onChange(e.target.value)}
+                    onChange={(e) => field.onChange(e.target.value || undefined)}
+                    placeholder="Leave empty to add to task backlog"
                   />
                 </FormControl>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Leave empty to add to your task backlog for daily planning
+                </p>
                 <FormMessage />
               </FormItem>
             )}

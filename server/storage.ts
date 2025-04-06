@@ -13,6 +13,7 @@ export interface IStorage {
   // Task methods
   getTasks(userId: number): Promise<Task[]>;
   getTasksByCategory(userId: number, category: string): Promise<Task[]>;
+  getBacklogTasks(userId: number): Promise<Task[]>;
   getTaskById(id: number): Promise<Task | undefined>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task | undefined>;
@@ -128,7 +129,33 @@ export class MemStorage implements IStorage {
       }
     ];
     
-    demoTasks.forEach(task => this.tasks.set(task.id, task as Task));
+    // Add a few backlog tasks without due dates
+    const backlogTasks = [
+      {
+        id: this.taskId++,
+        userId: 1,
+        title: 'Read Design Article',
+        description: 'Read the article about UX design trends',
+        dueDate: null,
+        priority: 'low',
+        category: 'education',
+        completed: false,
+        createdAt: new Date()
+      },
+      {
+        id: this.taskId++,
+        userId: 1,
+        title: 'Research Cloud Providers',
+        description: 'Compare AWS, GCP and Azure offerings',
+        dueDate: null,
+        priority: 'medium',
+        category: 'work',
+        completed: false,
+        createdAt: new Date()
+      }
+    ];
+    
+    [...demoTasks, ...backlogTasks].forEach(task => this.tasks.set(task.id, task as Task));
     
     // Add some demo time blocks
     const today = new Date();
@@ -223,6 +250,12 @@ export class MemStorage implements IStorage {
   async getTasksByCategory(userId: number, category: string): Promise<Task[]> {
     return Array.from(this.tasks.values()).filter(
       (task) => task.userId === userId && task.category === category
+    );
+  }
+
+  async getBacklogTasks(userId: number): Promise<Task[]> {
+    return Array.from(this.tasks.values()).filter(
+      (task) => task.userId === userId && !task.dueDate && !task.completed
     );
   }
 

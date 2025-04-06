@@ -2,9 +2,9 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { TimeBlock, insertTimeBlockSchema } from "@shared/schema";
+import { TimeBlock, insertTimeBlockSchema, Task } from "@shared/schema";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
@@ -52,6 +59,12 @@ export default function TimeBlockForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Fetch tasks for task selector
+  const { data: tasks, isLoading: isLoadingTasks } = useQuery<Task[]>({
+    queryKey: ['/api/tasks'],
+    enabled: open, // Only fetch when the modal is open
+  });
 
   // Initialize the form with default values or timeBlock values if editing
   const form = useForm<TimeBlockFormValues>({
@@ -167,6 +180,52 @@ export default function TimeBlockForm({
                 )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="taskId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Associate with Task (optional)</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      // If user selects a task, we might want to pre-fill title or description
+                      if (value === "none") {
+                        field.onChange(null);
+                        return;
+                      }
+                      
+                      field.onChange(value ? parseInt(value) : null);
+                      if (value) {
+                        const selectedTask = tasks?.find(task => task.id === parseInt(value));
+                        if (selectedTask && !form.getValues('title')) {
+                          form.setValue('title', selectedTask.title);
+                        }
+                        if (selectedTask && !form.getValues('description') && selectedTask.description) {
+                          form.setValue('description', selectedTask.description);
+                        }
+                      }
+                    }}
+                    value={field.value ? field.value.toString() : undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a task" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {tasks?.filter(task => !task.completed).map((task) => (
+                        <SelectItem key={task.id} value={task.id.toString()}>
+                          {task.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}

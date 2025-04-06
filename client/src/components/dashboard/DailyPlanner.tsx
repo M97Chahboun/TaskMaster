@@ -6,9 +6,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TimeBlock } from "@shared/schema";
 import { formatDate } from "@/utils/dateUtils";
 import TimeBlockForm from "@/components/tasks/TimeBlockForm";
+import TaskBacklog from "@/components/dashboard/TaskBacklog";
 import { format, addDays, subDays } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 
 interface DailyPlannerProps {
   userId: number;
@@ -201,6 +203,9 @@ export default function DailyPlanner({ userId, date = new Date() }: DailyPlanner
         <PlusCircle className="mr-2 h-5 w-5" />
         Add Time Block
       </div>
+      
+      {/* Task Backlog section */}
+      <TaskBacklog userId={userId} selectedDate={selectedDate} />
       
       {/* Time Block Form */}
       <TimeBlockForm 

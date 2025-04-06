@@ -23,13 +23,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Task routes
   app.get("/api/tasks", async (req, res) => {
-    const userId = parseInt(req.query.userId as string);
+    const userId = parseInt(req.query.userId as string) || 1;
     
     if (isNaN(userId)) {
       return res.status(400).json({ message: "Invalid userId" });
     }
     
     const tasks = await storage.getTasks(userId);
+    res.json(tasks);
+  });
+  
+  app.get("/api/tasks/backlog", async (req, res) => {
+    const userId = parseInt(req.query.userId as string) || 1;
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid userId" });
+    }
+    
+    const tasks = await storage.getBacklogTasks(userId);
     res.json(tasks);
   });
   
