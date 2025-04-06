@@ -6,12 +6,13 @@ import TaskCard from "@/components/tasks/TaskCard";
 import AddTaskModal from "@/components/tasks/AddTaskModal";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, ChartBar } from "lucide-react";
+import { Task } from "@shared/schema";
 
 export default function Categories() {
   const userId = 1; // Default user ID
   const [activeCategory, setActiveCategory] = useState("work");
   
-  const { data: tasks, isLoading, refetch } = useQuery({
+  const { data: tasks, isLoading, refetch } = useQuery<Task[]>({
     queryKey: ['/api/tasks/category/' + activeCategory, { userId }],
   });
   
@@ -20,7 +21,7 @@ export default function Categories() {
   };
   
   // Statistics for the active category
-  const completedTasks = tasks?.filter(task => task.completed) || [];
+  const completedTasks = tasks?.filter((task: Task) => task.completed) || [];
   const completionRate = tasks?.length ? (completedTasks.length / tasks.length) * 100 : 0;
   
   const getCategoryIcon = (category: string) => {
@@ -47,6 +48,16 @@ export default function Categories() {
         return <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
         </svg>;
+    }
+  };
+  
+  const getCategoryColor = (category: string): string => {
+    switch (category) {
+      case 'work': return 'primary';
+      case 'personal': return 'secondary';
+      case 'health': return 'green-500';
+      case 'education': return 'blue-500';
+      default: return 'gray-500';
     }
   };
   
@@ -85,24 +96,24 @@ export default function Categories() {
             </TabsList>
             
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-              <Card className="col-span-1 bg-primary bg-opacity-5">
+              <Card className={`col-span-1 bg-${getCategoryColor(activeCategory)} bg-opacity-5`}>
                 <CardContent className="p-4">
                   <div className="flex items-center mb-2">
-                    <ChartBar className="h-5 w-5 mr-1.5 text-primary" />
+                    <ChartBar className={`h-5 w-5 mr-1.5 text-${getCategoryColor(activeCategory)}`} />
                     <h3 className="font-medium">Category Stats</h3>
                   </div>
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-gray-500">Total Tasks</p>
-                      <p className="text-2xl font-bold text-primary">{tasks?.length || 0}</p>
+                      <p className={`text-2xl font-bold text-${getCategoryColor(activeCategory)}`}>{tasks?.length || 0}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Completed</p>
-                      <p className="text-2xl font-bold text-primary">{completedTasks.length}</p>
+                      <p className={`text-2xl font-bold text-${getCategoryColor(activeCategory)}`}>{completedTasks.length}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Completion Rate</p>
-                      <p className="text-2xl font-bold text-primary">{Math.round(completionRate)}%</p>
+                      <p className={`text-2xl font-bold text-${getCategoryColor(activeCategory)}`}>{Math.round(completionRate)}%</p>
                     </div>
                   </div>
                 </CardContent>
@@ -121,7 +132,7 @@ export default function Categories() {
                   <div className="text-center py-10">Loading tasks...</div>
                 ) : tasks && tasks.length > 0 ? (
                   <div className="space-y-3">
-                    {tasks.map(task => (
+                    {tasks.map((task: Task) => (
                       <TaskCard
                         key={task.id}
                         task={task}
