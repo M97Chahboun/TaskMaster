@@ -4,6 +4,8 @@ import {
   timeBlocks, type TimeBlock, type InsertTimeBlock
 } from "@shared/schema";
 
+import session from "express-session";
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -30,7 +32,13 @@ export interface IStorage {
   getCompletedTasksCount(userId: number, startDate?: Date, endDate?: Date): Promise<number>;
   getTaskCompletionRate(userId: number, startDate?: Date, endDate?: Date): Promise<number>;
   getTasksByDueDate(userId: number, startDate?: Date, endDate?: Date): Promise<Task[]>;
+  
+  // Session store for authentication
+  sessionStore: session.Store;
 }
+
+import createMemoryStore from "memorystore";
+const MemoryStore = createMemoryStore(session);
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
@@ -39,6 +47,7 @@ export class MemStorage implements IStorage {
   private userId: number;
   private taskId: number;
   private timeBlockId: number;
+  public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
@@ -47,6 +56,11 @@ export class MemStorage implements IStorage {
     this.userId = 1;
     this.taskId = 1;
     this.timeBlockId = 1;
+    
+    // Initialize the session store
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // 24 hours
+    });
     
     // Add a demo user
     this.users.set(1, {

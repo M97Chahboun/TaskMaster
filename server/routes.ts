@@ -1,14 +1,26 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTaskSchema, insertTimeBlockSchema } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
+
+// Middleware to check if user is authenticated
+function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Not authenticated" });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication routes
+  setupAuth(app);
+  
   // prefix all routes with /api
   
   // User routes
-  app.get("/api/users/:id", async (req, res) => {
+  app.get("/api/users/:id", ensureAuthenticated, async (req, res) => {
     const userId = parseInt(req.params.id);
     const user = await storage.getUser(userId);
     
@@ -21,42 +33,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
 
-  // Task routes
-  app.get("/api/tasks", async (req, res) => {
-    const userId = parseInt(req.query.userId as string) || 1;
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
+  // Task routes - protected by authentication
+  app.get("/api/tasks", ensureAuthenticated, async (req, res) => {
+    // Get user ID from authenticated session
+    const userId = req.user?.id || 1;
     
     const tasks = await storage.getTasks(userId);
     res.json(tasks);
   });
   
-  app.get("/api/tasks/backlog", async (req, res) => {
-    const userId = parseInt(req.query.userId as string) || 1;
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
+  app.get("/api/tasks/backlog", ensureAuthenticated, async (req, res) => {
+    // Get user ID from authenticated session
+    const userId = req.user?.id || 1;
     
     const tasks = await storage.getBacklogTasks(userId);
     res.json(tasks);
   });
   
-  app.get("/api/tasks/category/:category", async (req, res) => {
-    const userId = parseInt(req.query.userId as string);
+  app.get("/api/tasks/category/:category", ensureAuthenticated, async (req, res) => {
+    // Get user ID from authenticated session
+    const userId = req.user?.id || 1;
     const category = req.params.category;
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
     
     const tasks = await storage.getTasksByCategory(userId, category);
     res.json(tasks);
   });
   
-  app.get("/api/tasks/:id", async (req, res) => {
+  app.get("/api/tasks/:id", ensureAuthenticated, async (req, res) => {
     const taskId = parseInt(req.params.id);
     
     if (isNaN(taskId)) {
@@ -69,12 +72,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Task not found" });
     }
     
+    // Check if task belongs to the authenticated user
+    if (task.userId !== req.user?.id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
     res.json(task);
   });
   
-  app.post("/api/tasks", async (req, res) => {
+  app.post("/api/tasks", ensureAuthenticated, async (req, res) => {
     try {
-      const taskData = insertTaskSchema.parse(req.body);
+      // Always use the authenticated user's ID
+      const taskData = insertTaskSchema.parse({
+        ...req.body,
+        userId: req.user?.id // Set the user ID from the authenticated session
+      });
+      
       const task = await storage.createTask(taskData);
       res.status(201).json(task);
     } catch (error) {
@@ -85,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch("/api/tasks/:id", async (req, res) => {
+  app.patch("/api/tasks/:id", ensureAuthenticated, async (req, res) => {
     const taskId = parseInt(req.params.id);
     
     if (isNaN(taskId)) {
@@ -93,12 +106,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const task = await storage.updateTask(taskId, req.body);
+      // Check if the task belongs to the authenticated user
+      const existingTask = await storage.getTaskById(taskId);
       
-      if (!task) {
+      if (!existingTask) {
         return res.status(404).json({ message: "Task not found" });
       }
       
+      if (existingTask.userId !== req.user?.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const task = await storage.updateTask(taskId, req.body);
       res.json(task);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -108,25 +127,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/tasks/:id", async (req, res) => {
+  app.delete("/api/tasks/:id", ensureAuthenticated, async (req, res) => {
     const taskId = parseInt(req.params.id);
     
     if (isNaN(taskId)) {
       return res.status(400).json({ message: "Invalid taskId" });
     }
     
-    const deleted = await storage.deleteTask(taskId);
+    // Check if the task belongs to the authenticated user
+    const existingTask = await storage.getTaskById(taskId);
     
-    if (!deleted) {
+    if (!existingTask) {
       return res.status(404).json({ message: "Task not found" });
     }
     
+    if (existingTask.userId !== req.user?.id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    const deleted = await storage.deleteTask(taskId);
     res.status(204).end();
   });
   
-  // TimeBlock routes
-  app.get("/api/timeblocks", async (req, res) => {
-    const userId = parseInt(req.query.userId as string);
+  // TimeBlock routes - protected by authentication
+  app.get("/api/timeblocks", ensureAuthenticated, async (req, res) => {
+    // Get user ID from authenticated session
+    const userId = req.user?.id || 1;
     let date = undefined;
     
     if (req.query.date) {
@@ -137,15 +163,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
-    
     const timeBlocks = await storage.getTimeBlocks(userId, date);
     res.json(timeBlocks);
   });
   
-  app.get("/api/timeblocks/:id", async (req, res) => {
+  app.get("/api/timeblocks/:id", ensureAuthenticated, async (req, res) => {
     const timeBlockId = parseInt(req.params.id);
     
     if (isNaN(timeBlockId)) {
@@ -158,15 +180,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "TimeBlock not found" });
     }
     
+    // Check if the timeblock belongs to the authenticated user
+    if (timeBlock.userId !== req.user?.id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
     res.json(timeBlock);
   });
   
-  app.post("/api/timeblocks", async (req, res) => {
+  app.post("/api/timeblocks", ensureAuthenticated, async (req, res) => {
     try {
       console.log("Received timeblock data:", JSON.stringify(req.body));
       
       // Validate the data with our schema that accepts both string and Date
-      const timeBlockData = insertTimeBlockSchema.parse(req.body);
+      // Always use the authenticated user's ID
+      const timeBlockData = insertTimeBlockSchema.parse({
+        ...req.body,
+        userId: req.user?.id // Set the user ID from the authenticated session
+      });
       
       // Ensure date is converted to a Date object
       if (typeof timeBlockData.date === 'string') {
@@ -191,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch("/api/timeblocks/:id", async (req, res) => {
+  app.patch("/api/timeblocks/:id", ensureAuthenticated, async (req, res) => {
     const timeBlockId = parseInt(req.params.id);
     
     if (isNaN(timeBlockId)) {
@@ -199,6 +230,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
+      // Check if the timeblock belongs to the authenticated user
+      const existingTimeBlock = await storage.getTimeBlockById(timeBlockId);
+      
+      if (!existingTimeBlock) {
+        return res.status(404).json({ message: "TimeBlock not found" });
+      }
+      
+      if (existingTimeBlock.userId !== req.user?.id) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
       console.log("Received timeblock update data:", JSON.stringify(req.body));
       
       // Handle date conversion if it's present
@@ -215,11 +257,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       const timeBlock = await storage.updateTimeBlock(timeBlockId, updateData);
-      
-      if (!timeBlock) {
-        return res.status(404).json({ message: "TimeBlock not found" });
-      }
-      
       res.json(timeBlock);
     } catch (error) {
       console.error("Error updating timeblock:", error);
@@ -230,25 +267,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/timeblocks/:id", async (req, res) => {
+  app.delete("/api/timeblocks/:id", ensureAuthenticated, async (req, res) => {
     const timeBlockId = parseInt(req.params.id);
     
     if (isNaN(timeBlockId)) {
       return res.status(400).json({ message: "Invalid timeBlockId" });
     }
     
-    const deleted = await storage.deleteTimeBlock(timeBlockId);
+    // Check if the timeblock belongs to the authenticated user
+    const existingTimeBlock = await storage.getTimeBlockById(timeBlockId);
     
-    if (!deleted) {
+    if (!existingTimeBlock) {
       return res.status(404).json({ message: "TimeBlock not found" });
     }
     
+    if (existingTimeBlock.userId !== req.user?.id) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    const deleted = await storage.deleteTimeBlock(timeBlockId);
     res.status(204).end();
   });
   
-  // Statistics routes
-  app.get("/api/stats/completed-tasks", async (req, res) => {
-    const userId = parseInt(req.query.userId as string);
+  // Statistics routes - protected by authentication
+  app.get("/api/stats/completed-tasks", ensureAuthenticated, async (req, res) => {
+    // Get user ID from authenticated session
+    const userId = req.user?.id || 1;
     let startDate = undefined;
     let endDate = undefined;
     
@@ -266,18 +310,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(endDate.getTime())) {
         return res.status(400).json({ message: "Invalid endDate format" });
       }
-    }
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
     }
     
     const completedCount = await storage.getCompletedTasksCount(userId, startDate, endDate);
     res.json({ count: completedCount });
   });
   
-  app.get("/api/stats/completion-rate", async (req, res) => {
-    const userId = parseInt(req.query.userId as string);
+  app.get("/api/stats/completion-rate", ensureAuthenticated, async (req, res) => {
+    // Get user ID from authenticated session
+    const userId = req.user?.id || 1;
     let startDate = undefined;
     let endDate = undefined;
     
@@ -297,16 +338,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
-    
     const completionRate = await storage.getTaskCompletionRate(userId, startDate, endDate);
     res.json({ rate: completionRate });
   });
   
-  app.get("/api/stats/upcoming-tasks", async (req, res) => {
-    const userId = parseInt(req.query.userId as string);
+  app.get("/api/stats/upcoming-tasks", ensureAuthenticated, async (req, res) => {
+    // Get user ID from authenticated session
+    const userId = req.user?.id || 1;
     const startDate = new Date(); // Today
     let endDate = new Date();
     endDate.setDate(endDate.getDate() + 7); // 7 days from now
@@ -317,10 +355,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(endDate.getTime())) {
         return res.status(400).json({ message: "Invalid endDate format" });
       }
-    }
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
     }
     
     const upcomingTasks = await storage.getTasksByDueDate(userId, startDate, endDate);
