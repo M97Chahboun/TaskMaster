@@ -51,13 +51,23 @@ export default function Categories() {
     }
   };
   
-  const getCategoryColor = (category: string): string => {
+  const getCategoryBgColor = (category: string): string => {
     switch (category) {
-      case 'work': return 'primary';
-      case 'personal': return 'secondary';
-      case 'health': return 'green-500';
-      case 'education': return 'blue-500';
-      default: return 'gray-500';
+      case 'work': return 'bg-primary';
+      case 'personal': return 'bg-secondary';
+      case 'health': return 'bg-green-500';
+      case 'education': return 'bg-blue-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getCategoryTextColor = (category: string): string => {
+    switch (category) {
+      case 'work': return 'text-primary';
+      case 'personal': return 'text-secondary';
+      case 'health': return 'text-green-500';
+      case 'education': return 'text-blue-500';
+      default: return 'text-gray-500';
     }
   };
   
@@ -96,24 +106,24 @@ export default function Categories() {
             </TabsList>
             
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-              <Card className={`col-span-1 bg-${getCategoryColor(activeCategory)} bg-opacity-5`}>
+              <Card className={`col-span-1 ${getCategoryBgColor(activeCategory)} bg-opacity-5`}>
                 <CardContent className="p-4">
                   <div className="flex items-center mb-2">
-                    <ChartBar className={`h-5 w-5 mr-1.5 text-${getCategoryColor(activeCategory)}`} />
+                    <ChartBar className={`h-5 w-5 mr-1.5 ${getCategoryTextColor(activeCategory)}`} />
                     <h3 className="font-medium">Category Stats</h3>
                   </div>
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-gray-500">Total Tasks</p>
-                      <p className={`text-2xl font-bold text-${getCategoryColor(activeCategory)}`}>{tasks?.length || 0}</p>
+                      <p className={`text-2xl font-bold ${getCategoryTextColor(activeCategory)}`}>{tasks?.length || 0}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Completed</p>
-                      <p className={`text-2xl font-bold text-${getCategoryColor(activeCategory)}`}>{completedTasks.length}</p>
+                      <p className={`text-2xl font-bold ${getCategoryTextColor(activeCategory)}`}>{completedTasks.length}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Completion Rate</p>
-                      <p className={`text-2xl font-bold text-${getCategoryColor(activeCategory)}`}>{Math.round(completionRate)}%</p>
+                      <p className={`text-2xl font-bold ${getCategoryTextColor(activeCategory)}`}>{Math.round(completionRate)}%</p>
                     </div>
                   </div>
                 </CardContent>
@@ -122,10 +132,15 @@ export default function Categories() {
               <div className="col-span-1 lg:col-span-3">
                 <div className="mb-4 flex justify-between items-center">
                   <h3 className="font-medium">Tasks in this category</h3>
-                  <Button variant="outline" size="sm" className="text-primary">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add {activeCategory} task
-                  </Button>
+                  <AddTaskModal
+                    onTaskAdded={handleTaskAdded}
+                    trigger={
+                      <Button variant="outline" size="sm" className="text-primary">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add {activeCategory} task
+                      </Button>
+                    }
+                  />
                 </div>
                 
                 {isLoading ? (
