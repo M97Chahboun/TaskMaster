@@ -2,6 +2,7 @@ import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -27,6 +28,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterForm() {
   const { registerMutation } = useAuth();
   const isPending = registerMutation.isPending;
+  const [, setLocation] = useLocation();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -39,7 +41,12 @@ export default function RegisterForm() {
   });
 
   const onSubmit = (data: RegisterFormValues) => {
-    registerMutation.mutate(data);
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        // Navigate to home page after successful registration
+        setLocation("/");
+      }
+    });
   };
 
   return (
