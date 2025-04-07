@@ -9,7 +9,7 @@ import { User as SelectUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends Omit<SelectUser, "password"> { }
   }
 }
 
@@ -50,22 +50,31 @@ export function setupAuth(app: Express) {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false);
-        } else {
-          return done(null, user);
+          return done(null, false, { message: "Invalid username or password" });
         }
+        // Remove password before serializing
+        const { password: _, ...userWithoutPassword } = user;
+        return done(null, userWithoutPassword);
       } catch (error) {
         return done(error);
       }
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
-  
+  // Serialize just the user ID
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+
+  // Deserialize by fetching user and removing password
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      if (!user) {
+        return done(null, false);
+      }
+      const { password: _, ...userWithoutPassword } = user;
+      done(null, userWithoutPassword);
     } catch (error) {
       done(error);
     }
@@ -75,17 +84,21 @@ export function setupAuth(app: Express) {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ error: "Username already exists" });
+        return res.status(400).json({ message: "Username already exists" });
       }
 
+      const hashedPassword = await hashPassword(req.body.password);
       const user = await storage.createUser({
         ...req.body,
-        password: await hashPassword(req.body.password),
+        password: hashedPassword,
       });
 
-      req.login(user, (err) => {
+      // Remove password before sending response
+      const { password: _, ...userWithoutPassword } = user;
+
+      req.login(userWithoutPassword, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
       next(error);
@@ -95,8 +108,8 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string }) => {
       if (err) return next(err);
-      if (!user) return res.status(401).json({ error: "Invalid credentials" });
-      
+      if (!user) return res.status(401).json({ message: info.message || "Invalid credentials" });
+
       req.login(user, (err: Error | null) => {
         if (err) return next(err);
         res.status(200).json(user);

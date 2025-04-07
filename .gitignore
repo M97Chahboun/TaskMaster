@@ -4,3 +4,6 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+.vscode/branch-timer.json
+package-lock.json
+.env
