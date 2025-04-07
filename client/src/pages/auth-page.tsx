@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,12 +10,17 @@ import { Calendar, CheckCircle2, Clock, ListTodo } from "lucide-react";
 export default function AuthPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
-  
+  const [location] = useLocation();
+
+  // Get the redirect URL from query parameters
+  const params = new URLSearchParams(window.location.search);
+  const redirectTo = params.get("redirect") || "/";
+
   // Redirect if user is already authenticated
   if (user) {
-    return <Redirect to="/" />;
+    return <Redirect to={redirectTo} />;
   }
-  
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Form Side */}
@@ -27,10 +32,10 @@ export default function AuthPage() {
               Organize your tasks and boost your productivity
             </p>
           </div>
-          
-          <Tabs 
-            defaultValue="login" 
-            value={activeTab} 
+
+          <Tabs
+            defaultValue="login"
+            value={activeTab}
             onValueChange={setActiveTab}
             className="w-full"
           >
@@ -39,13 +44,13 @@ export default function AuthPage() {
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
             <TabsContent value="login" className="space-y-4">
-              <LoginForm />
+              <LoginForm redirectTo={redirectTo} />
               <div className="text-center mt-4">
                 <p className="text-sm text-muted-foreground">
                   Don't have an account?{" "}
-                  <Button 
-                    variant="link" 
-                    className="p-0" 
+                  <Button
+                    variant="link"
+                    className="p-0"
                     onClick={() => setActiveTab("register")}
                   >
                     Register now
@@ -54,13 +59,13 @@ export default function AuthPage() {
               </div>
             </TabsContent>
             <TabsContent value="register" className="space-y-4">
-              <RegisterForm />
+              <RegisterForm redirectTo={redirectTo} />
               <div className="text-center mt-4">
                 <p className="text-sm text-muted-foreground">
                   Already have an account?{" "}
-                  <Button 
-                    variant="link" 
-                    className="p-0" 
+                  <Button
+                    variant="link"
+                    className="p-0"
                     onClick={() => setActiveTab("login")}
                   >
                     Log in
@@ -71,29 +76,31 @@ export default function AuthPage() {
           </Tabs>
         </div>
       </div>
-      
+
       {/* Hero Side */}
       <div className="w-full md:w-1/2 bg-gradient-to-br from-primary/10 to-primary/20 hidden md:flex items-center justify-center p-10">
         <div className="max-w-md text-center">
-          <h2 className="text-4xl font-bold mb-6">Supercharge Your Productivity</h2>
+          <h2 className="text-4xl font-bold mb-6">
+            Supercharge Your Productivity
+          </h2>
           <div className="space-y-6">
-            <FeatureItem 
-              icon={ListTodo} 
+            <FeatureItem
+              icon={ListTodo}
               title="Smart Task Management"
               description="Organize tasks by priority, category, and due date"
             />
-            <FeatureItem 
-              icon={Calendar} 
+            <FeatureItem
+              icon={Calendar}
               title="Daily Planning"
               description="Plan your day with a visual schedule and time blocking"
             />
-            <FeatureItem 
-              icon={CheckCircle2} 
+            <FeatureItem
+              icon={CheckCircle2}
               title="Progress Tracking"
               description="Monitor your productivity with detailed statistics"
             />
-            <FeatureItem 
-              icon={Clock} 
+            <FeatureItem
+              icon={Clock}
               title="Kanban Workflow"
               description="Visualize your workflow with a drag-and-drop Kanban board"
             />
@@ -104,13 +111,13 @@ export default function AuthPage() {
   );
 }
 
-function FeatureItem({ 
-  icon: Icon, 
-  title, 
-  description 
-}: { 
-  icon: React.ComponentType<any>; 
-  title: string; 
+function FeatureItem({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: React.ComponentType<any>;
+  title: string;
   description: string;
 }) {
   return (

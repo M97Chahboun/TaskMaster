@@ -18,17 +18,19 @@ function Router() {
     <Switch>
       {/* Auth page is publicly accessible */}
       <Route path="/auth" component={AuthPage} />
-      
-      {/* Protected routes require authentication */}
-      <ProtectedRoute path="/" component={Dashboard} />
-      <ProtectedRoute path="/tasks" component={AllTasks} />
-      <ProtectedRoute path="/kanban" component={KanbanView} />
-      <ProtectedRoute path="/planner" component={DailyPlanner} />
-      <ProtectedRoute path="/categories" component={Categories} />
-      <ProtectedRoute path="/statistics" component={Statistics} />
-      
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
+
+      {/* Protected routes wrapped in AppLayout */}
+      <AppLayout>
+        <Switch>
+          <ProtectedRoute path="/" component={Dashboard} />
+          <ProtectedRoute path="/tasks" component={AllTasks} />
+          <ProtectedRoute path="/kanban" component={KanbanView} />
+          <ProtectedRoute path="/planner" component={DailyPlanner} />
+          <ProtectedRoute path="/categories" component={Categories} />
+          <ProtectedRoute path="/statistics" component={Statistics} />
+          <Route component={NotFound} />
+        </Switch>
+      </AppLayout>
     </Switch>
   );
 }
@@ -37,9 +39,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="taskmaster-theme">
       <AuthProvider>
-        <AppLayout>
-          <Router />
-        </AppLayout>
+        <Router />
         <Toaster />
       </AuthProvider>
     </ThemeProvider>

@@ -36,9 +36,15 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? 'strict' : 'lax',
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
   };
+
+  if (process.env.NODE_ENV === 'development') {
+    // Allow non-secure cookies in development
+    sessionSettings.cookie!.secure = false;
+  }
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
@@ -58,7 +64,7 @@ export function setupAuth(app: Express) {
       } catch (error) {
         return done(error);
       }
-    }),
+    })
   );
 
   // Serialize just the user ID

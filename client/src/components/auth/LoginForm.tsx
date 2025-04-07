@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -23,22 +24,15 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginForm() {
-  const { loginMutation, user } = useAuth();
+interface LoginFormProps {
+  redirectTo?: string;
+}
+
+export default function LoginForm({ redirectTo = "/" }: LoginFormProps) {
+  const { loginMutation } = useAuth();
   const isPending = loginMutation.isPending;
+  const [error, setError] = useState<string | null>(null);
   const [, setLocation] = useLocation();
-  
-  // Add useEffect to handle navigation after successful login
-  useEffect(() => {
-    if (user) {
-      // If user is logged in, navigate to home after a short delay
-      const timer = setTimeout(() => {
-        setLocation("/");
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [user, setLocation]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,13 +42,30 @@ export default function LoginForm() {
     },
   });
 
-  const onSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      setError(null);
+      await loginMutation.mutateAsync(data, {
+        onSuccess: () => {
+          setLocation(redirectTo);
+        },
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Login failed. Please try again."
+      );
+    }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <FormField
           control={form.control}
           name="username"
@@ -62,10 +73,11 @@ export default function LoginForm() {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter your username" 
-                  {...field} 
+                <Input
+                  placeholder="Enter your username"
+                  {...field}
                   disabled={isPending}
+                  autoComplete="username"
                 />
               </FormControl>
               <FormMessage />
@@ -79,11 +91,12 @@ export default function LoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder="Enter your password" 
-                  {...field} 
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  {...field}
                   disabled={isPending}
+                  autoComplete="current-password"
                 />
               </FormControl>
               <FormMessage />

@@ -13,7 +13,8 @@ export function ProtectedRoute({
 
   return (
     <Route path={path}>
-      {() => {
+      {(params) => {
+        // Show loading state while checking authentication
         if (isLoading) {
           return (
             <div className="flex items-center justify-center min-h-screen">
@@ -22,11 +23,21 @@ export function ProtectedRoute({
           );
         }
 
+        // Redirect to auth page if not authenticated
         if (!user) {
-          return <Redirect to="/auth" />;
+          const currentPath = window.location.pathname;
+          const searchParams = new URLSearchParams();
+          if (currentPath !== "/") {
+            searchParams.set("redirect", currentPath);
+          }
+          const redirectUrl =
+            "/auth" +
+            (searchParams.toString() ? `?${searchParams.toString()}` : "");
+          return <Redirect to={redirectUrl} />;
         }
 
-        return <Component />;
+        // Render the protected component
+        return <Component {...params} />;
       }}
     </Route>
   );

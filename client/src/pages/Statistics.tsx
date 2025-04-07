@@ -47,14 +47,25 @@ export default function Statistics() {
 
   // Fetch completion rate data with date range
   const { data: completionRate } = useQuery<{ rate: number }>({
-    queryKey: [
-      "/api/stats/completion-rate",
-      { startDate: new Date(), endDate: new Date() },
-    ],
+    queryKey: ["/api/stats/completion-rate", timeRange, categoryFilter],
     queryFn: async () => {
+      const endDate = new Date();
+      let startDate;
+      switch (timeRange) {
+        case "week":
+          startDate = subDays(endDate, 7);
+          break;
+        case "month":
+          startDate = subDays(endDate, 30);
+          break;
+        case "year":
+          startDate = subDays(endDate, 365);
+          break;
+      }
+
       const response = await apiRequest("POST", "/api/stats/completion-rate", {
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
       });
       return response.json();
     },
@@ -63,14 +74,25 @@ export default function Statistics() {
 
   // Fetch completed tasks count
   const { data: completedTasksData } = useQuery<{ count: number }>({
-    queryKey: [
-      "/api/stats/completed-tasks",
-      { startDate: new Date(), endDate: new Date() },
-    ],
+    queryKey: ["/api/stats/completed-tasks", timeRange, categoryFilter],
     queryFn: async () => {
+      const endDate = new Date();
+      let startDate;
+      switch (timeRange) {
+        case "week":
+          startDate = subDays(endDate, 7);
+          break;
+        case "month":
+          startDate = subDays(endDate, 30);
+          break;
+        case "year":
+          startDate = subDays(endDate, 365);
+          break;
+      }
+
       const response = await apiRequest("POST", "/api/stats/completed-tasks", {
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
       });
       return response.json();
     },

@@ -6,11 +6,7 @@ import { LogOut, Menu, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  Avatar, 
-  AvatarFallback, 
-  AvatarImage 
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,19 +28,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
-  
-  const handleLogout = () => {
-    logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        setLocation("/auth");
-      }
-    });
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync(undefined);
+      setLocation("/auth");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   // Get user initials for avatar
   const getUserInitials = (): string => {
     if (!user) return "U";
-    
+
     if (user.name) {
       const nameParts = user.name.split(" ");
       if (nameParts.length > 1) {
@@ -52,7 +49,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       }
       return user.name[0].toUpperCase();
     }
-    
+
     return user.username[0].toUpperCase();
   };
 
@@ -60,32 +57,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar - Desktop Only */}
       <Sidebar />
-      
+
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation */}
         <header className="bg-card shadow-sm z-10">
           <div className="flex justify-between items-center p-4">
             <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                className="mr-4 md:hidden" 
+              <Button
+                variant="ghost"
+                className="mr-4 md:hidden"
                 onClick={toggleMobileMenu}
               >
                 <Menu />
               </Button>
               <h2 className="text-lg font-medium">TaskMaster</h2>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              
+
               {user && (
                 <>
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                   </Button>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Avatar className="h-8 w-8 cursor-pointer">
@@ -106,7 +103,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="text-destructive focus:text-destructive cursor-pointer"
                         onClick={handleLogout}
                       >
@@ -120,15 +117,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
           </div>
         </header>
-        
+
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-4 bg-background">
           {children}
         </main>
       </div>
-      
+
       {/* Mobile Navigation */}
-      <MobileNav isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      <MobileNav
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
     </div>
   );
 }

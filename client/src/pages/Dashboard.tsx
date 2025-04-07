@@ -11,23 +11,31 @@ import AddTaskModal from "@/components/tasks/AddTaskModal";
 import { getGreeting, getFormattedDate } from "@/utils/dateUtils";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 import type { Task } from "@shared/schema";
 
 export default function Dashboard() {
   const [date] = useState(new Date());
   const { user } = useAuth();
+  const { tasks, isLoading, refetch } = useTasks();
+  const { data: upcomingTasks = [], isLoading: isUpcomingLoading } = useQuery<
+    Task[]
+  >({
+    queryKey: ["/api/stats/upcoming-tasks"],
+  });
 
-  // Protected route ensures this only renders with valid user
   if (!user?.id) return null;
+
+  if (isLoading || isUpcomingLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const greeting = getGreeting();
   const formattedDate = getFormattedDate(date);
-
-  const { tasks, isLoading, refetch } = useTasks();
-
-  const { data: upcomingTasks = [] } = useQuery<Task[]>({
-    queryKey: ["/api/stats/upcoming-tasks"],
-  });
 
   // Calculate stats based on tasks
   const todayTasks = tasks?.filter((task) => {
@@ -42,26 +50,27 @@ export default function Dashboard() {
   });
 
   const completedTodayTasks = todayTasks?.filter((task) => task.completed);
-
   const todayTasksCount = todayTasks?.length || 0;
   const completedTodayCount = completedTodayTasks?.length || 0;
-  const todayProgress =
-    todayTasksCount > 0 ? (completedTodayCount / todayTasksCount) * 100 : 0;
+  const todayProgress = todayTasksCount
+    ? (completedTodayCount / todayTasksCount) * 100
+    : 0;
 
-  const completedWeekCount =
-    tasks?.filter((task) => task.completed)?.length || 0;
-  const totalTasksCount = tasks?.length || 0;
-  const weekProgress =
-    totalTasksCount > 0 ? (completedWeekCount / totalTasksCount) * 100 : 0;
+  // Weekly stats
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const weekTasks = tasks?.filter((task) => {
+    if (!task.dueDate) return false;
+    const taskDate = new Date(task.dueDate);
+    return taskDate >= weekStart && taskDate <= date;
+  });
 
-  const upcomingDeadlinesCount = upcomingTasks?.length || 0;
-  const nextDeadline =
-    upcomingTasks && upcomingTasks.length > 0
-      ? upcomingTasks[0].title +
-        (upcomingTasks[0].dueDate
-          ? ` (${new Date(upcomingTasks[0].dueDate).toLocaleDateString()})`
-          : "")
-      : "No upcoming deadlines";
+  const completedWeekTasks = weekTasks?.filter((task) => task.completed);
+  const weekTasksCount = weekTasks?.length || 0;
+  const completedWeekCount = completedWeekTasks?.length || 0;
+  const weekProgress = weekTasksCount
+    ? (completedWeekCount / weekTasksCount) * 100
+    : 0;
 
   const handleTaskAdded = () => {
     refetch();
@@ -69,7 +78,6 @@ export default function Dashboard() {
 
   return (
     <div>
-      {/* Welcome Section */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex justify-between items-center">
@@ -98,35 +106,31 @@ export default function Dashboard() {
               icon={CheckCircle2}
               iconColor="text-green-500"
               progress={weekProgress}
-              progressLabel={`${Math.round(weekProgress)}%`}
+              progressLabel={`${completedWeekCount}/${weekTasksCount}`}
             />
 
             <StatCard
-              title="Upcoming Deadlines"
-              value={upcomingDeadlinesCount}
+              title="Upcoming Tasks"
+              value={upcomingTasks.length}
               icon={Clock}
-              iconColor="text-yellow-500"
-              progressLabel={nextDeadline}
+              iconColor="text-blue-500"
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Today's Plan Section */}
+      {/* Daily Planning Section */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Today's Plan</h2>
-            <Button
-              variant="ghost"
-              className="text-primary hover:text-primary-dark text-sm"
-            >
+            <h2 className="text-lg font-semibold">Daily Schedule</h2>
+            <Button variant="outline" size="sm">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 mr-1"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                className="w-4 h-4 mr-2"
               >
                 <path
                   strokeLinecap="round"
@@ -146,7 +150,6 @@ export default function Dashboard() {
       {/* Tasks By Category */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <CategorySection title="Work Tasks" category="work" color="primary" />
-
         <CategorySection
           title="Personal Tasks"
           category="personal"

@@ -1,113 +1,153 @@
-import { createContext, ReactNode, useContext } from "react";
-import {
-  useQuery,
-  useMutation,
-  UseMutationResult,
-} from "@tanstack/react-query";
-import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { User } from "@shared/schema";
 
-type AuthContextType = {
-  user: SelectUser | null;
+interface AuthContextType {
+  user: User | null;
   isLoading: boolean;
-  error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
-};
+  loginMutation: ReturnType<typeof useLogin>;
+  registerMutation: ReturnType<typeof useRegister>;
+  logoutMutation: ReturnType<typeof useLogout>;
+}
 
-type LoginData = Pick<InsertUser, "username" | "password">;
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
-  const {
-    data: user,
-    error,
-    isLoading,
-  } = useQuery<SelectUser | null, Error>({
-    queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
-
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
-    },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${user.name || user.username}!`,
+function useLogin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+        credentials: "include",
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
+      }
+
+      return response.json();
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid username or password",
-        variant: "destructive",
-      });
+    onSuccess: (userData) => {
+      queryClient.setQueryData(["user"], userData);
     },
   });
+}
 
-  const registerMutation = useMutation({
-    mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
-    },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: `Welcome, ${user.name || user.username}!`,
+function useRegister() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      username: string;
+      password: string;
+      name?: string;
+      email?: string;
+    }) => {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
       });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Registration failed");
+      }
+      return response.json();
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration failed",
-        description: error.message || "An error occurred during registration",
-        variant: "destructive",
-      });
+    onSuccess: (user) => {
+      queryClient.setQueryData(["user"], user);
     },
   });
+}
 
-  const logoutMutation = useMutation({
+function useLogout() {
+  const queryClient = useQueryClient();
+  const [, setUser] = useState<User | null>(null);
+
+  return useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      const response = await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Logout failed");
+      }
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
-      });
+      // Clear user state
+      queryClient.setQueryData(["user"], null);
+      // Clear all queries when logging out
+      queryClient.clear();
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Logout failed",
-        description: error.message,
-        variant: "destructive",
-      });
+    onSettled: () => {
+      // Always reset user state regardless of success/failure
+      setUser(null);
     },
   });
+}
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user: user || null,
-        isLoading,
-        error,
-        loginMutation,
-        logoutMutation,
-        registerMutation,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const logoutMutation = useLogout();
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await fetch("/api/user", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else {
+          // Clear user state if not authenticated
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        // Clear user state on error
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    checkAuth();
+  }, []);
+
+  // Update user state when mutations succeed
+  useEffect(() => {
+    if (loginMutation.data) {
+      setUser(loginMutation.data);
+    }
+    if (registerMutation.data) {
+      setUser(registerMutation.data);
+    }
+  }, [loginMutation.data, registerMutation.data]);
+
+  // Clear user state when logout mutation succeeds
+  useEffect(() => {
+    if (logoutMutation.isSuccess) {
+      setUser(null);
+    }
+  }, [logoutMutation.isSuccess]);
+
+  const value = {
+    user,
+    isLoading,
+    loginMutation,
+    registerMutation,
+    logoutMutation,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
