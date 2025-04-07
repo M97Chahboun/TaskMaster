@@ -13,15 +13,22 @@ import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import type { Task } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Dashboard() {
   const [date] = useState(new Date());
   const { user } = useAuth();
   const { tasks, isLoading, refetch } = useTasks();
+
   const { data: upcomingTasks = [], isLoading: isUpcomingLoading } = useQuery<
     Task[]
   >({
     queryKey: ["/api/stats/upcoming-tasks"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/stats/upcoming-tasks");
+      return response.json();
+    },
+    enabled: !!user,
   });
 
   if (!user?.id) return null;

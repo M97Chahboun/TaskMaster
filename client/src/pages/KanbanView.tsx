@@ -1,5 +1,4 @@
-import React, { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useCallback, useEffect } from "react";
 import KanbanBoard from "@/components/kanban/KanbanBoard";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useTasks } from "@/hooks/useTasks";
@@ -16,7 +15,7 @@ export default function KanbanView() {
   const [localTasks, setLocalTasks] = useState<Task[]>([]);
 
   // Update local tasks when the API data changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (tasks) {
       setLocalTasks(tasks);
     }

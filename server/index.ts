@@ -1,10 +1,32 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import session from "express-session";
+import memorystore from "memorystore";
+
+const MemoryStore = memorystore(session);
 
 const app = express();
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use(
+  session({
+    store: new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    }),
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -56,6 +78,12 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
+  if (process.env.NODE_ENV !== 'production') {
+    app.listen(3000, () => {
+      console.log('Server running on http://localhost:3000');
+    });
+  }
+
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
@@ -68,3 +96,5 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 })();
+
+export default app;

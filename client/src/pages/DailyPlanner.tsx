@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { useTasks } from "@/hooks/useTasks";
 import DailyPlanner from "@/components/dashboard/DailyPlanner";
 import { useQuery } from "@tanstack/react-query";
 import { Task } from "@shared/schema";
@@ -21,7 +20,14 @@ export default function DailyPlannerPage() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  const { tasks, isLoading, refetch } = useTasks();
+  const { data: tasks, isLoading } = useQuery<Task[]>({
+    queryKey: ["/api/tasks"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/tasks");
+      return response.json();
+    },
+    enabled: !!user,
+  });
 
   // Fetch time blocks for the selected date
   const {

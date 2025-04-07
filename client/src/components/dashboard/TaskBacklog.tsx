@@ -13,12 +13,14 @@ import {
 } from "@/components/ui/collapsible";
 import { getPriorityColor } from "@/utils/taskUtils";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TaskBacklogProps {
   selectedDate: Date;
 }
 
 export default function TaskBacklog({ selectedDate }: TaskBacklogProps) {
+  const { user } = useAuth();
   const [isTimeBlockFormOpen, setIsTimeBlockFormOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isOpen, setIsOpen] = useState(true);
@@ -31,6 +33,7 @@ export default function TaskBacklog({ selectedDate }: TaskBacklogProps) {
       const data = await response.json();
       return data as Task[];
     },
+    enabled: !!user,
   });
 
   const handleAddToSchedule = (task: Task) => {

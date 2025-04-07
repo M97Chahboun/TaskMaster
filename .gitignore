@@ -7,3 +7,5 @@ vite.config.ts.*
 .vscode/branch-timer.json
 package-lock.json
 .env
+.vercel
+.env.example

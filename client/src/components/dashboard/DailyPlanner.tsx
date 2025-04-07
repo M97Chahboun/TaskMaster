@@ -21,12 +21,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/use-auth";
 
 interface DailyPlannerProps {
   date?: Date;
 }
 
 export default function DailyPlanner({ date = new Date() }: DailyPlannerProps) {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(date);
   const [isTimeBlockFormOpen, setIsTimeBlockFormOpen] = useState(false);
   const [editingTimeBlock, setEditingTimeBlock] = useState<
@@ -47,6 +49,7 @@ export default function DailyPlanner({ date = new Date() }: DailyPlannerProps) {
       const data = await response.json();
       return data as TimeBlock[];
     },
+    enabled: !!user,
   });
 
   const handlePreviousDay = () => {

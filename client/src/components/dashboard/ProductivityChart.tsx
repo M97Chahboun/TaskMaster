@@ -3,11 +3,20 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 
 interface WeeklyData {
   day: string;
   count: number;
   date: Date;
+}
+
+interface CompletionRateResponse {
+  rate: number;
+}
+
+interface CompletedTasksResponse {
+  count: number;
 }
 
 export default function ProductivityChart() {
@@ -16,22 +25,74 @@ export default function ProductivityChart() {
     "week"
   );
 
-  interface CompletionRateResponse {
-    rate: number;
-  }
-
-  interface CompletedTasksResponse {
-    count: number;
-  }
-
   const { data: completionRate = { rate: 0 } } =
     useQuery<CompletionRateResponse>({
-      queryKey: ["/api/stats/completion-rate"],
+      queryKey: ["/api/stats/completion-rate", timeRange],
+      queryFn: async () => {
+        const endDate = new Date();
+        let startDate;
+        switch (timeRange) {
+          case "week":
+            startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 7);
+            break;
+          case "lastWeek":
+            startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 14);
+            endDate.setDate(endDate.getDate() - 7);
+            break;
+          case "month":
+            startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 30);
+            break;
+        }
+
+        const response = await apiRequest(
+          "POST",
+          "/api/stats/completion-rate",
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }
+        );
+        return response.json();
+      },
+      enabled: !!user,
     });
 
   const { data: completedTasks = { count: 0 } } =
     useQuery<CompletedTasksResponse>({
-      queryKey: ["/api/stats/completed-tasks"],
+      queryKey: ["/api/stats/completed-tasks", timeRange],
+      queryFn: async () => {
+        const endDate = new Date();
+        let startDate;
+        switch (timeRange) {
+          case "week":
+            startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 7);
+            break;
+          case "lastWeek":
+            startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 14);
+            endDate.setDate(endDate.getDate() - 7);
+            break;
+          case "month":
+            startDate = new Date(endDate);
+            startDate.setDate(startDate.getDate() - 30);
+            break;
+        }
+
+        const response = await apiRequest(
+          "POST",
+          "/api/stats/completed-tasks",
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          }
+        );
+        return response.json();
+      },
+      enabled: !!user,
     });
 
   // Generate mock data for the chart
