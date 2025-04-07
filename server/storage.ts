@@ -66,7 +66,10 @@ export class PostgresStorage implements IStorage {
       .select()
       .from(tasks)
       .where(
-        eq(tasks.userId, userId) && eq(tasks.category, categoryValue)
+        and(
+          eq(tasks.userId, userId),
+          eq(tasks.category, categoryValue)
+        )
       );
   }
 
@@ -75,7 +78,10 @@ export class PostgresStorage implements IStorage {
       .select()
       .from(tasks)
       .where(
-        eq(tasks.userId, userId) && eq(tasks.completed, false)
+        and(
+          eq(tasks.userId, userId),
+          eq(tasks.completed, false)
+        )
       );
   }
 
@@ -162,7 +168,10 @@ export class PostgresStorage implements IStorage {
       .select()
       .from(timeBlocks)
       .where(
-        eq(timeBlocks.userId, userId) && eq(timeBlocks.date, date)
+        and(
+          eq(timeBlocks.userId, userId),
+          eq(timeBlocks.date, date)
+        )
       );
   }
 

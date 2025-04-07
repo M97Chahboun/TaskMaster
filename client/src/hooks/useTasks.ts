@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Task, InsertTask } from "@shared/schema";
-import { getQueryFn, apiRequest } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -15,6 +15,12 @@ export function useTasks() {
     refetch
   } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await apiRequest("GET", `/api/tasks`);
+      const data = await response.json();
+      return data as Task[];
+    },
     enabled: !!user,
   });
 
@@ -83,29 +89,29 @@ export function useTasks() {
     }
   });
 
-  const getTasksByCategory = (category: string) => {
-    return tasks?.filter(task => task.category === category) || [];
+  const getTasksByCategory = (category: string): Task[] => {
+    return tasks?.filter((task: Task) => task.category === category) || [];
   };
 
-  const getTasksByPriority = (priority: string) => {
-    return tasks?.filter(task => task.priority === priority) || [];
+  const getTasksByPriority = (priority: string): Task[] => {
+    return tasks?.filter((task: Task) => task.priority === priority) || [];
   };
 
-  const getCompletedTasks = () => {
-    return tasks?.filter(task => task.completed) || [];
+  const getCompletedTasks = (): Task[] => {
+    return tasks?.filter((task: Task) => task.completed) || [];
   };
 
-  const getPendingTasks = () => {
-    return tasks?.filter(task => !task.completed) || [];
+  const getPendingTasks = (): Task[] => {
+    return tasks?.filter((task: Task) => !task.completed) || [];
   };
 
-  const getTasksForToday = () => {
+  const getTasksForToday = (): Task[] => {
     if (!tasks) return [];
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return tasks.filter(task => {
+    return tasks.filter((task: Task) => {
       if (!task.dueDate) return false;
       const dueDate = new Date(task.dueDate);
       dueDate.setHours(0, 0, 0, 0);
@@ -113,7 +119,7 @@ export function useTasks() {
     });
   };
 
-  const getUpcomingTasks = (days: number = 7) => {
+  const getUpcomingTasks = (days: number = 7): Task[] => {
     if (!tasks) return [];
 
     const today = new Date();
@@ -122,7 +128,7 @@ export function useTasks() {
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + days);
 
-    return tasks.filter(task => {
+    return tasks.filter((task: Task) => {
       if (!task.dueDate || task.completed) return false;
 
       const dueDate = new Date(task.dueDate);

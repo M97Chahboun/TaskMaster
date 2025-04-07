@@ -9,17 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTasks } from "@/hooks/useTasks";
-import { useQuery } from "@tanstack/react-query";
-import {
-  ChartBarStacked,
-  CheckCircle,
-  Clock,
-  Calendar,
-  ChartPie,
-  TrendingUp,
-} from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useQuery } from "@tanstack/react-query";
 import {
   format,
   subDays,
@@ -28,23 +19,61 @@ import {
   eachDayOfInterval,
 } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { Task } from "@shared/schema";
+import {
+  ChartPie,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  Calendar,
+} from "lucide-react";
+import { getCategoryColor } from "@/utils/taskUtils";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Statistics() {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState<"week" | "month" | "year">("week");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  const { tasks, isLoading } = useTasks();
+  const { data: tasks, isLoading } = useQuery<Task[]>({
+    queryKey: ["/api/tasks"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/tasks");
+      const data = await response.json();
+      return data as Task[];
+    },
+    enabled: !!user,
+  });
 
-  // Fetch completion rate data
+  // Fetch completion rate data with date range
   const { data: completionRate } = useQuery<{ rate: number }>({
-    queryKey: ["/api/stats/completion-rate", { userId: user?.id }],
+    queryKey: [
+      "/api/stats/completion-rate",
+      { startDate: new Date(), endDate: new Date() },
+    ],
+    queryFn: async () => {
+      const response = await apiRequest("POST", "/api/stats/completion-rate", {
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
+      });
+      return response.json();
+    },
     enabled: !!user,
   });
 
   // Fetch completed tasks count
   const { data: completedTasksData } = useQuery<{ count: number }>({
-    queryKey: ["/api/stats/completed-tasks", { userId: user?.id }],
+    queryKey: [
+      "/api/stats/completed-tasks",
+      { startDate: new Date(), endDate: new Date() },
+    ],
+    queryFn: async () => {
+      const response = await apiRequest("POST", "/api/stats/completed-tasks", {
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
+      });
+      return response.json();
+    },
     enabled: !!user,
   });
 
@@ -192,24 +221,6 @@ export default function Statistics() {
     (sum, item) => sum + item.count,
     0
   );
-
-  // Helper function to get category color
-  function getCategoryColor(category: string): string {
-    switch (category) {
-      case "work":
-        return "bg-primary";
-      case "personal":
-        return "bg-secondary";
-      case "health":
-        return "bg-green-500";
-      case "education":
-        return "bg-blue-500";
-      case "other":
-        return "bg-gray-500";
-      default:
-        return "bg-gray-500";
-    }
-  }
 
   // Find most productive day
   const getMostProductiveDay = () => {

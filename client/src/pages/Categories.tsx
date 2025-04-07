@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, ChartBar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Categories() {
   const { user } = useAuth();
@@ -19,6 +20,14 @@ export default function Categories() {
     refetch,
   } = useQuery<Task[]>({
     queryKey: ["/api/tasks/category/" + activeCategory],
+    queryFn: async () => {
+      const response = await apiRequest(
+        "GET",
+        `/api/tasks/category/${activeCategory}`
+      );
+      const data = await response.json();
+      return data as Task[];
+    },
     enabled: !!user,
   });
 
@@ -153,6 +162,8 @@ export default function Categories() {
         return "text-gray-500";
     }
   };
+
+  if (!user) return null;
 
   return (
     <div>

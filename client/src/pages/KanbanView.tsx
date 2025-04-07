@@ -71,7 +71,6 @@ export default function KanbanView() {
             key={boardKey}
             tasks={localTasks}
             onTasksChange={handleTaskChange}
-            userId={user.id}
           />
         ) : (
           <div className="flex items-center justify-center h-full">

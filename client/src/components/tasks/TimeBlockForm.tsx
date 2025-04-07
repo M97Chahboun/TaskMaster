@@ -26,12 +26,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 // Create a form schema from the insert time block schema with validation
 const timeBlockFormSchema = insertTimeBlockSchema.extend({
   startTime: z.string().min(1, "Start time is required"),
-  duration: z.coerce.number().min(5, "Duration must be at least 5 minutes").max(480, "Duration cannot exceed 8 hours"),
+  duration: z.coerce
+    .number()
+    .min(5, "Duration must be at least 5 minutes")
+    .max(480, "Duration cannot exceed 8 hours"),
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
   description: z.string().optional(),
   date: z.string().min(1, "Date is required"),
@@ -44,7 +55,6 @@ interface TimeBlockFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   open: boolean;
-  userId: number;
   selectedDate: Date;
 }
 
@@ -53,16 +63,18 @@ export default function TimeBlockForm({
   onSuccess,
   onCancel,
   open,
-  userId,
-  selectedDate
+  selectedDate,
 }: TimeBlockFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  if (!user) return null;
+
   // Fetch backlog tasks for task selector
   const { data: tasks, isLoading: isLoadingTasks } = useQuery<Task[]>({
-    queryKey: ['/api/tasks/backlog'],
+    queryKey: ["/api/tasks/backlog"],
     enabled: open, // Only fetch when the modal is open
   });
 
@@ -70,7 +82,7 @@ export default function TimeBlockForm({
   const form = useForm<TimeBlockFormValues>({
     resolver: zodResolver(timeBlockFormSchema),
     defaultValues: {
-      userId,
+      userId: user.id,
       title: timeBlock?.title || "",
       description: timeBlock?.description || "",
       startTime: timeBlock?.startTime || "09:00",
@@ -86,29 +98,18 @@ export default function TimeBlockForm({
       // Convert string date to Date object before sending to server
       const payload = {
         ...values,
-        date: new Date(values.date)
+        date: new Date(values.date),
       };
-      
-      // Log the payload to help with debugging
-      console.log("Sending payload:", payload);
-      
+
       if (timeBlock?.id) {
-        return apiRequest(
-          "PATCH",
-          `/api/timeblocks/${timeBlock.id}`,
-          payload
-        );
+        return apiRequest("PATCH", `/api/timeblocks/${timeBlock.id}`, payload);
       } else {
-        return apiRequest(
-          "POST",
-          "/api/timeblocks",
-          payload
-        );
+        return apiRequest("POST", "/api/timeblocks", payload);
       }
     },
     onSuccess: () => {
       // Invalidate queries related to time blocks
-      queryClient.invalidateQueries({ queryKey: ['/api/timeblocks'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timeblocks"] });
       toast({
         title: timeBlock?.id ? "Time block updated" : "Time block created",
         description: "Your time block has been saved successfully.",
@@ -136,10 +137,12 @@ export default function TimeBlockForm({
     <Dialog open={open} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{timeBlock?.id ? "Edit Time Block" : "Add Time Block"}</DialogTitle>
+          <DialogTitle>
+            {timeBlock?.id ? "Edit Time Block" : "Add Time Block"}
+          </DialogTitle>
           <DialogDescription>
-            {timeBlock?.id 
-              ? "Update the details of this time block in your schedule." 
+            {timeBlock?.id
+              ? "Update the details of this time block in your schedule."
               : "Add a new time block to your schedule for the selected date."}
           </DialogDescription>
         </DialogHeader>
@@ -152,13 +155,16 @@ export default function TimeBlockForm({
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Meeting, Break, Focus Time..." {...field} />
+                    <Input
+                      placeholder="Meeting, Break, Focus Time..."
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -173,7 +179,7 @@ export default function TimeBlockForm({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="duration"
@@ -194,7 +200,7 @@ export default function TimeBlockForm({
                 )}
               />
             </div>
-            
+
             <FormField
               control={form.control}
               name="taskId"
@@ -208,15 +214,24 @@ export default function TimeBlockForm({
                         field.onChange(null);
                         return;
                       }
-                      
+
                       field.onChange(value ? parseInt(value) : null);
                       if (value) {
-                        const selectedTask = tasks?.find(task => task.id === parseInt(value));
-                        if (selectedTask && !form.getValues('title')) {
-                          form.setValue('title', selectedTask.title);
+                        const selectedTask = tasks?.find(
+                          (task) => task.id === parseInt(value)
+                        );
+                        if (selectedTask && !form.getValues("title")) {
+                          form.setValue("title", selectedTask.title);
                         }
-                        if (selectedTask && !form.getValues('description') && selectedTask.description) {
-                          form.setValue('description', selectedTask.description);
+                        if (
+                          selectedTask &&
+                          !form.getValues("description") &&
+                          selectedTask.description
+                        ) {
+                          form.setValue(
+                            "description",
+                            selectedTask.description
+                          );
                         }
                       }
                     }}
@@ -229,18 +244,20 @@ export default function TimeBlockForm({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {tasks?.filter(task => !task.completed).map((task) => (
-                        <SelectItem key={task.id} value={task.id.toString()}>
-                          {task.title}
-                        </SelectItem>
-                      ))}
+                      {tasks
+                        ?.filter((task) => !task.completed)
+                        .map((task) => (
+                          <SelectItem key={task.id} value={task.id.toString()}>
+                            {task.title}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -258,7 +275,7 @@ export default function TimeBlockForm({
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
               <Button
                 type="button"
@@ -269,7 +286,11 @@ export default function TimeBlockForm({
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : timeBlock?.id ? "Update" : "Create"}
+                {isSubmitting
+                  ? "Saving..."
+                  : timeBlock?.id
+                  ? "Update"
+                  : "Create"}
               </Button>
             </DialogFooter>
           </form>

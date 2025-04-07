@@ -23,14 +23,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 interface DailyPlannerProps {
-  userId: number;
   date?: Date;
 }
 
-export default function DailyPlanner({
-  userId,
-  date = new Date(),
-}: DailyPlannerProps) {
+export default function DailyPlanner({ date = new Date() }: DailyPlannerProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(date);
   const [isTimeBlockFormOpen, setIsTimeBlockFormOpen] = useState(false);
   const [editingTimeBlock, setEditingTimeBlock] = useState<
@@ -40,12 +36,13 @@ export default function DailyPlanner({
 
   const formattedDate = formatDate(selectedDate);
 
+  // Fetch time blocks for the selected date
   const { data: timeBlocks = [], isLoading } = useQuery<TimeBlock[]>({
-    queryKey: ["/api/timeblocks", { userId, date: formattedDate }],
+    queryKey: ["/api/timeblocks", { date: formattedDate }],
     queryFn: async () => {
       const response = await apiRequest(
         "GET",
-        `/api/timeblocks?userId=${userId}&date=${formattedDate}`
+        `/api/timeblocks?date=${formattedDate}`
       );
       const data = await response.json();
       return data as TimeBlock[];
@@ -240,7 +237,7 @@ export default function DailyPlanner({
       </div>
 
       {/* Task Backlog section */}
-      <TaskBacklog userId={userId} selectedDate={selectedDate} />
+      <TaskBacklog selectedDate={selectedDate} />
 
       {/* Time Block Form */}
       <TimeBlockForm
@@ -248,7 +245,6 @@ export default function DailyPlanner({
         onSuccess={handleTimeBlockFormSuccess}
         onCancel={handleTimeBlockFormCancel}
         timeBlock={editingTimeBlock}
-        userId={userId}
         selectedDate={selectedDate}
       />
     </div>

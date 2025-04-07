@@ -6,22 +6,31 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle } from "lucide-react";
 import TimeBlockForm from "@/components/tasks/TimeBlockForm";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { getPriorityColor } from "@/utils/taskUtils";
+import { apiRequest } from "@/lib/queryClient";
 
 interface TaskBacklogProps {
-  userId: number;
   selectedDate: Date;
 }
 
-export default function TaskBacklog({ userId, selectedDate }: TaskBacklogProps) {
+export default function TaskBacklog({ selectedDate }: TaskBacklogProps) {
   const [isTimeBlockFormOpen, setIsTimeBlockFormOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isOpen, setIsOpen] = useState(true);
 
   // Fetch tasks without a due date (backlog tasks)
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
-    queryKey: ['/api/tasks/backlog'],
+    queryKey: ["/api/tasks/backlog"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/tasks/backlog");
+      const data = await response.json();
+      return data as Task[];
+    },
   });
 
   const handleAddToSchedule = (task: Task) => {
@@ -63,7 +72,10 @@ export default function TaskBacklog({ userId, selectedDate }: TaskBacklogProps) 
       <CollapsibleContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4">
           {tasks.map((task) => (
-            <Card key={task.id} className="border hover:border-primary transition-colors">
+            <Card
+              key={task.id}
+              className="border hover:border-primary transition-colors"
+            >
               <CardContent className="p-4">
                 <div className="flex justify-between items-start">
                   <div>
@@ -106,7 +118,6 @@ export default function TaskBacklog({ userId, selectedDate }: TaskBacklogProps) 
             title: selectedTask.title,
             description: selectedTask.description || "",
           }}
-          userId={userId}
           selectedDate={selectedDate}
         />
       )}

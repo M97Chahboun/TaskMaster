@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient"; // Changed from @/lib/api
+import { apiRequest } from "@/lib/queryClient";
 
 export default function DailyPlannerPage() {
   const { user } = useAuth();
@@ -31,18 +31,15 @@ export default function DailyPlannerPage() {
   } = useQuery({
     queryKey: [
       "/api/timeblocks",
-      {
-        userId: user?.id,
-        date: selectedDate.toISOString().split("T")[0],
-      },
+      { date: selectedDate.toISOString().split("T")[0] },
     ],
-    queryFn: () =>
-      apiRequest(
+    queryFn: async () => {
+      const response = await apiRequest(
         "GET",
-        `/api/timeblocks?userId=${user?.id}&date=${
-          selectedDate.toISOString().split("T")[0]
-        }`
-      ),
+        `/api/timeblocks?date=${selectedDate.toISOString().split("T")[0]}`
+      );
+      return response.json();
+    },
     enabled: !!user,
   });
 
@@ -126,7 +123,7 @@ export default function DailyPlannerPage() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className="lg:col-span-3">
               <h3 className="font-medium mb-4">Time Blocks</h3>
-              <DailyPlanner userId={user.id} date={selectedDate} />
+              <DailyPlanner date={selectedDate} />
             </div>
 
             <div className="lg:col-span-2">

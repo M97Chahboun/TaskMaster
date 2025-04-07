@@ -26,7 +26,7 @@ export default function Dashboard() {
   const { tasks, isLoading, refetch } = useTasks();
 
   const { data: upcomingTasks = [] } = useQuery<Task[]>({
-    queryKey: ["/api/stats/upcoming-tasks", { userId: user.id }],
+    queryKey: ["/api/stats/upcoming-tasks"],
   });
 
   // Calculate stats based on tasks
@@ -42,6 +42,7 @@ export default function Dashboard() {
   });
 
   const completedTodayTasks = todayTasks?.filter((task) => task.completed);
+
   const todayTasksCount = todayTasks?.length || 0;
   const completedTodayCount = completedTodayTasks?.length || 0;
   const todayProgress =
@@ -138,31 +139,26 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          <DailyPlanner userId={user.id} date={date} />
+          <DailyPlanner date={date} />
         </CardContent>
       </Card>
 
       {/* Tasks By Category */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <CategorySection
-          title="Work Tasks"
-          category="work"
-          color="primary"
-          userId={user.id}
-        />
+        <CategorySection title="Work Tasks" category="work" color="primary" />
 
         <CategorySection
           title="Personal Tasks"
           category="personal"
           color="secondary"
-          userId={user.id}
         />
       </div>
 
       {/* Productivity Stats */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <ProductivityChart userId={user.id} />
+          <h2 className="text-lg font-semibold mb-4">Weekly Productivity</h2>
+          <ProductivityChart />
         </CardContent>
       </Card>
     </div>
