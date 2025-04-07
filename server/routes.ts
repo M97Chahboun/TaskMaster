@@ -29,33 +29,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     // Don't return the password
-    const { password, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
   });
 
   // Task routes - protected by authentication
   app.get("/api/tasks", ensureAuthenticated, async (req, res) => {
-    // Get user ID from authenticated session
-    const userId = req.user?.id || 1;
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    const tasks = await storage.getTasks(userId);
+    const tasks = await storage.getTasks(req.user.id);
     res.json(tasks);
   });
 
   app.get("/api/tasks/backlog", ensureAuthenticated, async (req, res) => {
-    // Get user ID from authenticated session
-    const userId = req.user?.id || 1;
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    const tasks = await storage.getBacklogTasks(userId);
+    const tasks = await storage.getBacklogTasks(req.user.id);
     res.json(tasks);
   });
 
   app.get("/api/tasks/category/:category", ensureAuthenticated, async (req, res) => {
-    // Get user ID from authenticated session
-    const userId = req.user?.id || 1;
-    const category = req.params.category;
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    const tasks = await storage.getTasksByCategory(userId, category);
+    const category = req.params.category;
+    const tasks = await storage.getTasksByCategory(req.user.id, category);
     res.json(tasks);
   });
 
@@ -341,7 +344,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/stats/upcoming-tasks", ensureAuthenticated, async (req, res) => {
     // Get user ID from authenticated session
-    const userId = req.user?.id || 1;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const startDate = new Date(); // Today
     let endDate = new Date();
     endDate.setDate(endDate.getDate() + 7); // 7 days from now

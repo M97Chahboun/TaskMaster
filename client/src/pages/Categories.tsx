@@ -1,15 +1,16 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import TaskCard from "@/components/tasks/TaskCard";
-import AddTaskModal from "@/components/tasks/AddTaskModal";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, ChartBar } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Task } from "@shared/schema";
+import AddTaskModal from "@/components/tasks/AddTaskModal";
+import TaskCard from "@/components/tasks/TaskCard";
+import { Button } from "@/components/ui/button";
+import { Plus, ChartBar } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Categories() {
-  const userId = 1; // Default user ID
+  const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState("work");
 
   const {
@@ -17,7 +18,8 @@ export default function Categories() {
     isLoading,
     refetch,
   } = useQuery<Task[]>({
-    queryKey: ["/api/tasks/category/" + activeCategory, { userId }],
+    queryKey: ["/api/tasks/category/" + activeCategory],
+    enabled: !!user,
   });
 
   const handleTaskAdded = () => {
@@ -186,12 +188,16 @@ export default function Categories() {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
               <Card
-                className={`col-span-1 ${getCategoryBgColor(activeCategory)} bg-opacity-5`}
+                className={`col-span-1 ${getCategoryBgColor(
+                  activeCategory
+                )} bg-opacity-5`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center mb-2">
                     <ChartBar
-                      className={`h-5 w-5 mr-1.5 ${getCategoryTextColor(activeCategory)}`}
+                      className={`h-5 w-5 mr-1.5 ${getCategoryTextColor(
+                        activeCategory
+                      )}`}
                     />
                     <h3 className="font-medium">Category Stats</h3>
                   </div>
@@ -199,7 +205,9 @@ export default function Categories() {
                     <div>
                       <p className="text-sm text-gray-500">Total Tasks</p>
                       <p
-                        className={`text-2xl font-bold ${getCategoryTextColor(activeCategory)}`}
+                        className={`text-2xl font-bold ${getCategoryTextColor(
+                          activeCategory
+                        )}`}
                       >
                         {tasks?.length || 0}
                       </p>
@@ -207,7 +215,9 @@ export default function Categories() {
                     <div>
                       <p className="text-sm text-gray-500">Completed</p>
                       <p
-                        className={`text-2xl font-bold ${getCategoryTextColor(activeCategory)}`}
+                        className={`text-2xl font-bold ${getCategoryTextColor(
+                          activeCategory
+                        )}`}
                       >
                         {completedTasks.length}
                       </p>
@@ -215,7 +225,9 @@ export default function Categories() {
                     <div>
                       <p className="text-sm text-gray-500">Completion Rate</p>
                       <p
-                        className={`text-2xl font-bold ${getCategoryTextColor(activeCategory)}`}
+                        className={`text-2xl font-bold ${getCategoryTextColor(
+                          activeCategory
+                        )}`}
                       >
                         {Math.round(completionRate)}%
                       </p>

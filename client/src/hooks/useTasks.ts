@@ -1,30 +1,33 @@
-import { useState, useEffect } from "react";
-import { Task } from "@shared/schema";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Task, InsertTask } from "@shared/schema";
+import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
-export function useTasks(userId: number) {
+export function useTasks() {
   const { toast } = useToast();
-  
+  const { user } = useAuth();
+
   const {
     data: tasks,
     isLoading,
     isError,
     refetch
   } = useQuery<Task[]>({
-    queryKey: ['/api/tasks', { userId }],
+    queryKey: ["/api/tasks"],
+    enabled: !!user,
   });
-  
+
   const createTaskMutation = useMutation({
-    mutationFn: (taskData: Omit<Task, 'id' | 'createdAt'>) => {
-      return apiRequest('POST', '/api/tasks', taskData);
+    mutationFn: async (task: InsertTask) => {
+      const res = await apiRequest("POST", "/api/tasks", task);
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
+      refetch();
       toast({
-        title: "Task created",
-        description: "Your task has been created successfully.",
+        title: "Success",
+        description: "Task created successfully.",
       });
     },
     onError: (error) => {
@@ -36,16 +39,17 @@ export function useTasks(userId: number) {
       });
     }
   });
-  
+
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, ...data }: Partial<Task> & { id: number }) => {
-      return apiRequest('PATCH', `/api/tasks/${id}`, data);
+    mutationFn: async ({ id, task }: { id: number; task: Partial<Task> }) => {
+      const res = await apiRequest("PATCH", `/api/tasks/${id}`, task);
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
+      refetch();
       toast({
-        title: "Task updated",
-        description: "Your task has been updated successfully.",
+        title: "Success",
+        description: "Task updated successfully.",
       });
     },
     onError: (error) => {
@@ -57,15 +61,15 @@ export function useTasks(userId: number) {
       });
     }
   });
-  
+
   const deleteTaskMutation = useMutation({
-    mutationFn: (id: number) => {
-      return apiRequest('DELETE', `/api/tasks/${id}`);
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/tasks/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks', { userId }] });
+      refetch();
       toast({
-        title: "Task deleted",
+        title: "Success",
         description: "Your task has been deleted successfully.",
       });
     },
@@ -78,58 +82,56 @@ export function useTasks(userId: number) {
       });
     }
   });
-  
+
   const getTasksByCategory = (category: string) => {
     return tasks?.filter(task => task.category === category) || [];
   };
-  
+
   const getTasksByPriority = (priority: string) => {
     return tasks?.filter(task => task.priority === priority) || [];
   };
-  
+
   const getCompletedTasks = () => {
     return tasks?.filter(task => task.completed) || [];
   };
-  
+
   const getPendingTasks = () => {
     return tasks?.filter(task => !task.completed) || [];
   };
-  
+
   const getTasksForToday = () => {
     if (!tasks) return [];
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     return tasks.filter(task => {
       if (!task.dueDate) return false;
-      
       const dueDate = new Date(task.dueDate);
       dueDate.setHours(0, 0, 0, 0);
-      
       return dueDate.getTime() === today.getTime();
     });
   };
-  
+
   const getUpcomingTasks = (days: number = 7) => {
     if (!tasks) return [];
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    const futureDate = new Date(today);
-    futureDate.setDate(today.getDate() + days);
-    
+
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + days);
+
     return tasks.filter(task => {
-      if (!task.dueDate) return false;
-      
+      if (!task.dueDate || task.completed) return false;
+
       const dueDate = new Date(task.dueDate);
       dueDate.setHours(0, 0, 0, 0);
-      
-      return dueDate >= today && dueDate <= futureDate;
+
+      return dueDate >= today && dueDate <= endDate;
     });
   };
-  
+
   return {
     tasks,
     isLoading,

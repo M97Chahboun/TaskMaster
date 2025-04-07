@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import TaskCard from "@/components/tasks/TaskCard";
@@ -16,52 +16,55 @@ import { useTasks } from "@/hooks/useTasks";
 import { Task } from "@shared/schema";
 import { sortTasksByDueDate, sortTasksByPriority } from "@/utils/taskUtils";
 import { Search, Plus } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AllTasks() {
-  const userId = 1; // Default user ID
-  const { tasks, isLoading, refetch } = useTasks(userId);
-  
+  const { user } = useAuth();
+  const { tasks, isLoading, refetch } = useTasks();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState("priority");
   const [activeTab, setActiveTab] = useState("all");
-  
+
   const handleTaskAdded = () => {
     refetch();
   };
-  
+
   // Filter and sort tasks
   const filterTasks = (taskList: Task[] | undefined): Task[] => {
     if (!taskList) return [];
-    
+
     // Apply tab filter
     let filtered = [...taskList];
     if (activeTab === "completed") {
-      filtered = filtered.filter(task => task.completed);
+      filtered = filtered.filter((task) => task.completed);
     } else if (activeTab === "pending") {
-      filtered = filtered.filter(task => !task.completed);
+      filtered = filtered.filter((task) => !task.completed);
     }
-    
+
     // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(task => 
-        task.title.toLowerCase().includes(query) || 
-        (task.description?.toLowerCase().includes(query) || false)
+      filtered = filtered.filter(
+        (task) =>
+          task.title.toLowerCase().includes(query) ||
+          task.description?.toLowerCase().includes(query) ||
+          false
       );
     }
-    
+
     // Apply sorting
     if (sortOption === "dueDate") {
       return sortTasksByDueDate(filtered);
     } else if (sortOption === "priority") {
       return sortTasksByPriority(filtered);
     }
-    
+
     return filtered;
   };
-  
+
   const filteredTasks = filterTasks(tasks);
-  
+
   return (
     <div>
       <Card>
@@ -81,10 +84,7 @@ export default function AllTasks() {
               />
             </div>
             <div className="w-full md:w-48">
-              <Select
-                value={sortOption}
-                onValueChange={setSortOption}
-              >
+              <Select value={sortOption} onValueChange={setSortOption}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -95,24 +95,24 @@ export default function AllTasks() {
               </Select>
             </div>
           </div>
-          
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+
+          <Tabs
+            defaultValue="all"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
             <TabsList className="mb-4">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="pending">Pending</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="all" className="space-y-4">
               {isLoading ? (
                 <div className="text-center py-10">Loading tasks...</div>
               ) : filteredTasks.length > 0 ? (
-                filteredTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onUpdate={refetch}
-                  />
+                filteredTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} onUpdate={refetch} />
                 ))
               ) : (
                 <div className="text-center py-10 text-gray-500">
@@ -123,17 +123,13 @@ export default function AllTasks() {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="pending" className="space-y-4">
               {isLoading ? (
                 <div className="text-center py-10">Loading tasks...</div>
               ) : filteredTasks.length > 0 ? (
-                filteredTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onUpdate={refetch}
-                  />
+                filteredTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} onUpdate={refetch} />
                 ))
               ) : (
                 <div className="text-center py-10 text-gray-500">
@@ -144,17 +140,13 @@ export default function AllTasks() {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="completed" className="space-y-4">
               {isLoading ? (
                 <div className="text-center py-10">Loading tasks...</div>
               ) : filteredTasks.length > 0 ? (
-                filteredTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onUpdate={refetch}
-                  />
+                filteredTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} onUpdate={refetch} />
                 ))
               ) : (
                 <div className="text-center py-10 text-gray-500">
