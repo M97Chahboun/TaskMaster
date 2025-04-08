@@ -9,18 +9,19 @@
       "src": "client/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "npm run build"
+        "buildCommand": "cd client && npm run build",
+        "outputDirectory": "client/build"
       }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "dist"
+      "dest": "server/index.ts"
     },
     {
       "src": "/(.*)",
-      "dest": "dist/public"
+      "dest": "client/build/$1"
     }
   ]
 }
