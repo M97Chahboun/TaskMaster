@@ -255,9 +255,31 @@ export default function Statistics() {
     return mostProductive.label;
   };
 
-  // Find the average completion time (just a placeholder since we don't track task creation time)
+  // Calculate the average time between task creation and completion (using current time for completed tasks)
   const getAverageCompletionTime = () => {
-    return "2.5 days";
+    if (!tasks) return "N/A";
+
+    const completedTasks = tasks.filter(
+      (task) => task.completed && task.createdAt
+    );
+
+    if (completedTasks.length === 0) return "N/A";
+
+    const totalMs = completedTasks.reduce((sum, task) => {
+      const createdAt = new Date(task.createdAt).getTime();
+      // For completed tasks without dueDate, use current time as completion time
+      const completionTime = task.dueDate 
+        ? new Date(task.dueDate).getTime() 
+        : Date.now();
+      return sum + (completionTime - createdAt);
+    }, 0);
+
+    const avgMs = totalMs / completedTasks.length;
+    const avgDays = avgMs / (1000 * 60 * 60 * 24);
+
+    return avgDays >= 1 
+      ? `${avgDays.toFixed(1)} days` 
+      : `${(avgDays * 24).toFixed(1)} hours`;
   };
 
   return (
@@ -387,11 +409,12 @@ export default function Statistics() {
                         className="flex flex-col items-center flex-1"
                       >
                         <div
-                          className="bg-primary-light hover:bg-primary w-full rounded-t-md transition-all duration-200 cursor-pointer"
+                          className="bg-blue-400 hover:bg-blue-600 w-full rounded-t-md transition-all duration-200 cursor-pointer"
                           style={{
                             height: `${
-                              day.count ? (day.count / maxCount) * 100 : 0
+                              day.count ? Math.max((day.count / maxCount) * 100, 5) : 5
                             }%`,
+                            minHeight: '5px'
                           }}
                           title={`${day.count} tasks on ${format(
                             day.date,
@@ -533,7 +556,7 @@ export default function Statistics() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-center p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg">
                       <h4 className="text-sm text-gray-500 mb-1">
                         Average Completion Time
                       </h4>
@@ -541,7 +564,7 @@ export default function Statistics() {
                         {getAverageCompletionTime()}
                       </p>
                     </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-center p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg">
                       <h4 className="text-sm text-gray-500 mb-1">
                         Task Efficiency
                       </h4>

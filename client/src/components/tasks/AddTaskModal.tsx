@@ -6,19 +6,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import TaskForm from "./TaskForm";
 import { useState } from "react";
+import { Task } from "@shared/schema";
 
-interface AddTaskModalProps {
+interface TaskModalProps {
   onTaskAdded: () => void;
   trigger?: React.ReactNode;
+  task?: Task;
+  mode?: "add" | "edit";
 }
 
-export default function AddTaskModal({
+export default function TaskModal({
   onTaskAdded,
   trigger,
-}: AddTaskModalProps) {
+  task,
+  mode = "add",
+}: TaskModalProps) {
   const [open, setOpen] = useState(false);
 
   const handleTaskAdded = () => {
@@ -31,16 +36,27 @@ export default function AddTaskModal({
       <DialogTrigger asChild>
         {trigger || (
           <Button className="bg-primary hover:bg-primary-dark">
-            <Plus className="mr-1 h-4 w-4" />
-            Add Task
+            {mode === "add" ? (
+              <>
+                <Plus className="mr-1 h-4 w-4" />
+                Add Task
+              </>
+            ) : (
+              <>
+                <Pencil className="mr-1 h-4 w-4" />
+                Edit Task
+              </>
+            )}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Add New Task</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {mode === "add" ? "Add New Task" : "Edit Task"}
+          </DialogTitle>
         </DialogHeader>
-        <TaskForm onSuccess={handleTaskAdded} />
+        <TaskForm task={task} onSuccess={handleTaskAdded} />
       </DialogContent>
     </Dialog>
   );

@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import { LogOut, Menu, Bell } from "lucide-react";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -54,81 +55,84 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar - Desktop Only */}
-      <Sidebar />
+    <>
+      {user && <NotificationCenter userId={user.id.toString()} />}
+      <div className="flex h-screen overflow-hidden bg-background">
+        {/* Sidebar - Desktop Only */}
+        <Sidebar />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Navigation */}
-        <header className="bg-card shadow-sm z-10">
-          <div className="flex justify-between items-center p-4">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                className="mr-4 md:hidden"
-                onClick={toggleMobileMenu}
-              >
-                <Menu />
-              </Button>
-              <h2 className="text-lg font-medium">TaskMaster</h2>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Navigation */}
+          <header className="bg-card shadow-sm z-10">
+            <div className="flex justify-between items-center p-4">
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  className="mr-4 md:hidden"
+                  onClick={toggleMobileMenu}
+                >
+                  <Menu />
+                </Button>
+                <h2 className="text-lg font-medium">TaskMaster</h2>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <ThemeToggle />
+
+                {user && (
+                  <>
+                    <Button variant="ghost" size="icon">
+                      <Bell className="h-5 w-5" />
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Avatar className="h-8 w-8 cursor-pointer">
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {getUserInitials()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>
+                          <div className="flex flex-col">
+                            <span>{user.name || user.username}</span>
+                            {user.email && (
+                              <span className="text-xs text-muted-foreground mt-1">
+                                {user.email}
+                              </span>
+                            )}
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive cursor-pointer"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          <span>Log out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )}
+              </div>
             </div>
+          </header>
 
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
+          {/* Main Content */}
+          <main className="flex-1 overflow-y-auto p-4 bg-background">
+            {children}
+          </main>
+        </div>
 
-              {user && (
-                <>
-                  <Button variant="ghost" size="icon">
-                    <Bell className="h-5 w-5" />
-                  </Button>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Avatar className="h-8 w-8 cursor-pointer">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {getUserInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>
-                        <div className="flex flex-col">
-                          <span>{user.name || user.username}</span>
-                          {user.email && (
-                            <span className="text-xs text-muted-foreground mt-1">
-                              {user.email}
-                            </span>
-                          )}
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive cursor-pointer"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-4 bg-background">
-          {children}
-        </main>
+        {/* Mobile Navigation */}
+        <MobileNav
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+        />
       </div>
-
-      {/* Mobile Navigation */}
-      <MobileNav
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-      />
-    </div>
+    </>
   );
 }

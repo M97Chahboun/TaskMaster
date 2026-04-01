@@ -52,7 +52,6 @@ export default function TaskForm({ task, onSuccess }: TaskFormProps) {
     defaultValues: {
       title: task?.title || "",
       description: task?.description || "",
-      dueDate: task?.dueDate ? new Date(task.dueDate) : undefined,
       priority: task?.priority || "medium",
       category: task?.category || "work",
       inProgress: task?.inProgress || false,
@@ -126,62 +125,31 @@ export default function TaskForm({ task, onSuccess }: TaskFormProps) {
           )}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="priority"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Priority</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="dueDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Due Date (optional)</FormLabel>
+        <FormField
+          control={form.control}
+          name="priority"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Priority</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
                 <FormControl>
-                  <Input
-                    type="date"
-                    {...field}
-                    value={
-                      field.value
-                        ? new Date(field.value).toISOString().split("T")[0]
-                        : ""
-                    }
-                    onChange={(e) =>
-                      field.onChange(e.target.value || undefined)
-                    }
-                    placeholder="Leave empty to add to task backlog"
-                  />
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
                 </FormControl>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Leave empty to add to your task backlog for daily planning
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

@@ -3,6 +3,8 @@ import { Task } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import TaskModal from "./AddTaskModal";
+import { Pencil } from "lucide-react";
 
 interface TaskCardProps {
   task: Task;
@@ -88,9 +90,22 @@ export default function TaskCard({ task, onUpdate, onClick }: TaskCardProps) {
   
   return (
     <div 
-      className={`task-card border border-border rounded-lg p-4 mb-3 cursor-pointer transform transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${priorityBorderColors[task.priority as keyof typeof priorityBorderColors]} border-l-4 bg-card`}
+      className={`task-card relative border border-border rounded-lg p-4 mb-3 cursor-pointer transform transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${priorityBorderColors[task.priority as keyof typeof priorityBorderColors]} border-l-4 bg-card`}
       onClick={onClick}
     >
+      <TaskModal
+        task={task}
+        onTaskAdded={onUpdate}
+        mode="edit"
+        trigger={
+          <button 
+            className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-primary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+        }
+      />
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center">
