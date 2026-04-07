@@ -15,6 +15,7 @@ import {
   Shield,
   Clock,
   CheckCheck,
+  FlaskConical,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -85,12 +86,23 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Beta Demo Banner */}
+      <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-400 text-sm py-2 px-4 text-center flex items-center justify-center gap-2" data-testid="banner-beta">
+        <FlaskConical className="w-4 h-4 flex-shrink-0" />
+        <span>
+          <strong>Beta Demo</strong> — This is a demonstration project and is not yet publicly launched. Data may be reset at any time.
+        </span>
+      </div>
+
       {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary" data-testid="link-logo">
             <CheckCircle className="w-6 h-6" />
             TaskMaster
+            <span className="text-[10px] font-semibold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full border border-amber-500/30 leading-none" data-testid="badge-beta-nav">
+              Beta
+            </span>
           </Link>
 
           <div className="flex items-center gap-3">
