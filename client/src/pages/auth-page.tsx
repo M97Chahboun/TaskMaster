@@ -9,12 +9,13 @@ import { Calendar, CheckCircle2, Clock, ListTodo } from "lucide-react";
 
 export default function AuthPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("login");
   const [location] = useLocation();
 
-  // Get the redirect URL from query parameters
+  // Get the redirect URL and initial tab from query parameters
   const params = new URLSearchParams(window.location.search);
-  const redirectTo = params.get("redirect") || "/";
+  const redirectTo = params.get("redirect") || "/dashboard";
+  const initialTab = params.get("tab") === "register" ? "register" : "login";
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   // Redirect if user is already authenticated
   if (user) {

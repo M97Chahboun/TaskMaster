@@ -44,9 +44,9 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
           <div className="p-4">
             <nav className="space-y-1">
               <Link 
-                href="/"
+                href="/dashboard"
                 className={`flex items-center p-2 rounded-md ${
-                  location === "/" 
+                  location === "/dashboard" 
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-muted"
                 }`}
@@ -123,8 +123,8 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
       {/* Fixed Bottom Nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around items-center py-2 z-20">
         <Link 
-          href="/"
-          className={`flex flex-col items-center p-2 ${location === "/" ? "text-primary" : "text-muted-foreground"}`}
+          href="/dashboard"
+          className={`flex flex-col items-center p-2 ${location === "/dashboard" ? "text-primary" : "text-muted-foreground"}`}
         >
           <PanelLeft className="w-5 h-5" />
           <span className="text-xs mt-1">Dashboard</span>

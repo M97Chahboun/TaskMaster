@@ -33,7 +33,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync(undefined);
-      setLocation("/auth");
+      setLocation("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }

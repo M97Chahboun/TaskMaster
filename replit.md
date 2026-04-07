@@ -37,13 +37,20 @@ The schema includes three tables: `users`, `tasks`, `time_blocks`.
 - Build: `npm run build`
 - Production: `node dist/index.js`
 
+## Routing
+- `/` - Public landing page (LandingPage.tsx) — visible to all users
+- `/auth` - Login/Register page (supports `?tab=register` and `?redirect=` params)
+- `/dashboard` - Protected dashboard (requires login)
+- `/tasks`, `/kanban`, `/planner`, `/categories`, `/statistics` - Protected app pages
+
 ## Key Features
-1. **Dashboard** - Productivity charts, task stats, backlog overview
-2. **Task Management** - Full CRUD with priority and category support
-3. **Kanban Board** - Drag-and-drop task status management
-4. **Daily Planner** - Time-blocking with task linking
-5. **Statistics** - Completion rates and productivity trends
-6. **Authentication** - Register/login with secure session management
+1. **Landing Page** - Public marketing page at `/` with hero, features grid, and CTA
+2. **Dashboard** - Productivity charts, task stats, backlog overview
+3. **Task Management** - Full CRUD with priority and category support
+4. **Kanban Board** - Drag-and-drop task status management
+5. **Daily Planner** - Time-blocking with task linking
+6. **Statistics** - Completion rates and productivity trends
+7. **Authentication** - Register/login with secure session management
 
 ## Deployment
 Configured for Replit autoscale deployment. Build outputs to `dist/index.js`.
